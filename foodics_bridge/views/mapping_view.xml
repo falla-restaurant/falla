@@ -1,0 +1,683 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem id="menu_foodics_mapping"
+        name="Mapping"
+        parent="foodics_menu_root"
+        sequence="3"/>
+
+    <!-- Foodics Product Mapping View -->
+    <record id="foodics_product_mapping_tree_view" model="ir.ui.view">
+        <field name="name">foodics.mapping.tree</field>
+        <field name="model">foodics.product.mapping</field>
+        <field name="arch" type="xml">
+            <tree string="Product Mapping" create="false" delete="false">
+                <field name="product_id"/>
+                <field name="create_date"/>
+                <field name="product_odoo_id"/>
+                <field name="product_foodics_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="foodics_product_mapping_form_view" model="ir.ui.view">
+        <field name="name">foodics.product.mapping.form</field>
+        <field name="model">foodics.product.mapping</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form string="Product Mapping" create="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="product_id" readonly="1"/>
+                            <field name="product_odoo_id" readonly="1"/>
+                            <field name="product_foodics_id" readonly="1"/>
+                            <field name="foodics_created_date" readonly="1"/>
+                            <field name="foodics_update_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="sku" readonly="1"/>
+                            <field name="create_date" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="foodic_product_search" model="ir.ui.view">
+        <field name="name">foodics.product.mapping.search.view</field>
+        <field name="model">foodics.product.mapping</field>
+        <field name="arch" type="xml">
+            <search string="Foodic Product">
+                <field name="product_id"/>
+                <field name="product_foodics_id"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="foodics_product_mapping_action" model="ir.actions.act_window">
+        <field name="name">Product Mapping</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">foodics.product.mapping</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="foodics_product_mapping_tree_view"/>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem action="foodics_product_mapping_action" id="menu_foodics_product_mapping" 
+        parent="menu_foodics_mapping" sequence="4"/>
+
+    <!-- Foodics Modifier Mapping View -->
+    <record id="foodics_modifier_mapping_tree_view" model="ir.ui.view">
+        <field name="name">foodics.modifier.mapping.tree</field>
+        <field name="model">foodics.modifier.mapping</field>
+        <field name="arch" type="xml">
+            <tree string="Modifier Mapping" create="false" delete="false">
+                <field name="product_id"/>
+                <field name="create_date"/>
+                <field name="product_odoo_id"/>
+                <field name="modifier_foodics_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="foodics_modifier_mapping_form_view" model="ir.ui.view">
+        <field name="name">foodics.modifier.mapping.form</field>
+        <field name="model">foodics.modifier.mapping</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form string="Modifier Mapping" create="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="product_id" readonly="1"/>
+                            <field name="product_odoo_id" readonly="1"/>
+                            <field name="modifier_foodics_id" readonly="1"/>
+                            <field name="foodics_created_date" readonly="1"/>
+                            <field name="foodics_update_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="sku" readonly="1"/>
+                            <field name="create_date" readonly="1"/>
+                        </group>
+                        <notebook>
+                            <page string="Options">
+                                <field name="value_ids" widget="one2many" nolabel="1">
+                                    <tree string="Values" editable="bottom">
+                                        <field name="option_foodics_id"/>
+                                        <field name="name"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="foodic_Modifier_search" model="ir.ui.view">
+        <field name="name">foodics.modifier.mapping.search.view</field>
+        <field name="model">foodics.modifier.mapping</field>
+        <field name="arch" type="xml">
+            <search string="Foodic Product">
+                <field name="product_id"/>
+                <field name="modifier_foodics_id"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="foodics_modifier_mapping_action" model="ir.actions.act_window">
+        <field name="name">Modifier Mapping</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">foodics.modifier.mapping</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="foodics_modifier_mapping_tree_view"/>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem action="foodics_modifier_mapping_action" id="menu_foodics_modifier_mapping" 
+        parent="menu_foodics_mapping" sequence="5"/>
+
+
+    <!-- Foodics Category Mapping View -->
+    <record id="foodics_category_mapping_tree_view" model="ir.ui.view">
+        <field name="name">foodics.category.mapping.tree</field>
+        <field name="model">foodics.category.mapping</field>
+        <field name="arch" type="xml">
+            <tree string="Category Mapping" create="false" delete="false">
+                <field name="category_id"/>
+                <field name="create_date"/>
+                <field name="category_odoo_id"/>
+                <field name="category_foodics_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="foodics_category_mapping_form_view" model="ir.ui.view">
+        <field name="name">foodics.category.mapping.form</field>
+        <field name="model">foodics.category.mapping</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form string="Category Mapping" create="false">
+                <sheet>
+                    <group>
+                        <group string="Product Category">
+                            <field name="category_id" readonly="1"/>
+                            <field name="category_odoo_id" readonly="1"/>
+                            <field name="category_foodics_id" readonly="1"/>
+                            <field name="parent_category_foodics_id" readonly="1"/>
+                            <field name="foodics_created_date" readonly="1"/>
+                            <field name="foodics_update_date" readonly="1"/>
+                        </group>
+                        <group string="PoS Category">
+                            <field name="create_date" readonly="1"/>
+                            <field name="pos_category_id" readonly="1"/>
+                            <field name="pos_category_odoo_id" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="foodic_category_search" model="ir.ui.view">
+        <field name="name">foodics.category.mapping.search.view</field>
+        <field name="model">foodics.category.mapping</field>
+        <field name="arch" type="xml">
+            <search string="Foodic Category">
+                <field name="category_id"/>
+                <field name="category_foodics_id"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="foodics_category_mapping_action" model="ir.actions.act_window">
+        <field name="name">Category Mapping</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">foodics.category.mapping</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="foodics_category_mapping_tree_view"/>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem action="foodics_category_mapping_action" id="menu_foodics_category_mapping" 
+        parent="menu_foodics_mapping" sequence="6"/>
+
+
+    <!-- Foodics Customer Mapping View -->
+    <record id="foodics_customer_mapping_tree_view" model="ir.ui.view">
+        <field name="name">foodics.customer.mapping.tree</field>
+        <field name="model">foodics.customer.mapping</field>
+        <field name="arch" type="xml">
+            <tree string="Customer Mapping" create="false" delete="false">
+                <field name="partner_id"/>
+                <field name="create_date"/>
+                <field name="partner_odoo_id"/>
+                <field name="partner_foodics_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="foodics_customer_mapping_form_view" model="ir.ui.view">
+        <field name="name">ffoodics.customer.mapping.form</field>
+        <field name="model">foodics.customer.mapping</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form string="Customer Mapping" create="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="partner_id" readonly="1"/>
+                            <field name="partner_odoo_id" readonly="1"/>
+                            <field name="partner_foodics_id" readonly="1"/>
+                            <field name="foodics_created_date" readonly="1"/>
+                            <field name="foodics_update_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="create_date" readonly="1"/>
+                            <field name="blacklist" readonly="1"/>
+                            <!-- <field name="country_foodics_id"/>
+                            <field name="latitude"/>
+                            <field name="longitude"/>
+                            <field name="w3w_address"/>
+                            <field name="address_hid"/>
+                            <field name="delivery_zone_hid"/> -->
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="foodic_customer_search" model="ir.ui.view">
+        <field name="name">foodics.customer.mapping.search.view</field>
+        <field name="model">foodics.customer.mapping</field>
+        <field name="arch" type="xml">
+            <search string="Foodic Customer">
+                <field name="partner_id"/>
+                <field name="partner_foodics_id"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="foodics_customer_mapping_action" model="ir.actions.act_window">
+        <field name="name">Customer Mapping</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">foodics.customer.mapping</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="foodics_customer_mapping_tree_view"/>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem action="foodics_customer_mapping_action" id="menu_foodics_customer_mapping" 
+        parent="menu_foodics_mapping" sequence="8"/>
+
+    <!-- Foodics Branch Mapping View -->
+    <record id="foodics_branch_mapping_tree_view" model="ir.ui.view">
+        <field name="name">foodics.branch.mapping.tree</field>
+        <field name="model">foodics.branch.mapping</field>
+        <field name="arch" type="xml">
+            <tree string="Branch Mapping" create="false" delete="false">
+                <field name="branch_id"/>
+                <field name="create_date"/>
+                <field name="branch_odoo_id"/>
+                <field name="branch_foodics_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="foodics_branch_mapping_form_view" model="ir.ui.view">
+        <field name="name">foodics.branch.mapping.form</field>
+        <field name="model">foodics.branch.mapping</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form string="Branch Mapping" create="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="branch_id" readonly="1"/>
+                            <field name="branch_odoo_id" readonly="1"/>
+                            <field name="branch_foodics_id" readonly="1"/>
+                            <field name="foodics_created_date" readonly="1"/>
+                            <field name="foodics_update_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="create_date" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="foodic_branch_order_search" model="ir.ui.view">
+        <field name="name">foodics.branch.mapping.search.view</field>
+        <field name="model">foodics.branch.mapping</field>
+        <field name="arch" type="xml">
+            <search string="Foodic Branch">
+                <field name="branch_id"/>
+                <field name="branch_foodics_id"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="foodics_branch_mapping_action" model="ir.actions.act_window">
+        <field name="name">Branch Mapping</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">foodics.branch.mapping</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="foodics_branch_mapping_tree_view"/>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem action="foodics_branch_mapping_action" id="menu_foodics_branch_mapping" 
+        parent="menu_foodics_mapping" sequence="2"/>
+
+    <!-- Foodics Floor Location Mapping View -->
+    <record id="foodics_floor_location_mapping_tree_view" model="ir.ui.view">
+        <field name="name">foodics.floor.location.mapping.tree</field>
+        <field name="model">foodics.floor.location.mapping</field>
+        <field name="arch" type="xml">
+            <tree string="Floor Location Mapping" create="false" delete="false">
+                <field name="floor_id"/>
+                <field name="create_date"/>
+                <field name="floor_odoo_id"/>
+                <field name="floor_foodics_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="foodics_floor_location_mapping_form_view" model="ir.ui.view">
+        <field name="name">foodics.floor.location.mapping.form</field>
+        <field name="model">foodics.floor.location.mapping</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form string="Floor Location Mapping" create="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="floor_id" readonly="1"/>
+                            <field name="floor_odoo_id" readonly="1"/>
+                            <field name="floor_foodics_id" readonly="1"/>
+                            <field name="foodics_created_date" readonly="1"/>
+                            <field name="foodics_update_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="create_date" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="foodic_floor_search" model="ir.ui.view">
+        <field name="name">foodics.floor.location.mapping.search.view</field>
+        <field name="model">foodics.floor.location.mapping</field>
+        <field name="arch" type="xml">
+            <search string="Foodic Floor">
+                <field name="floor_id"/>
+                <field name="floor_foodics_id"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="foodics_floor_location_mapping_action" model="ir.actions.act_window">
+        <field name="name">Floor Location Mapping</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">foodics.floor.location.mapping</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="foodics_floor_location_mapping_tree_view"/>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem action="foodics_floor_location_mapping_action" id="menu_foodics_floor_mapping" 
+        parent="menu_foodics_mapping" sequence="10"/>
+
+
+    <!-- Foodics Payment Method Mapping View -->
+    <record id="foodics_payment_method_mapping_tree_view" model="ir.ui.view">
+        <field name="name">foodics.payment.method.mapping.tree</field>
+        <field name="model">foodics.payment.method.mapping</field>
+        <field name="arch" type="xml">
+            <tree string="Payment Method Mapping" create="false" delete="false">
+                <field name="payment_id"/>
+                <field name="create_date"/>
+                <field name="payment_odoo_id"/>
+                <field name="payment_foodics_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="foodics_payment_method_mapping_form_view" model="ir.ui.view">
+        <field name="name">foodics.payment.method.mapping.form</field>
+        <field name="model">foodics.payment.method.mapping</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form string="Payment Method Mapping" create="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="payment_id" readonly="1"/>
+                            <field name="payment_odoo_id" readonly="1"/>
+                            <field name="payment_foodics_id" readonly="1"/>
+                            <field name="foodics_created_date" readonly="1"/>
+                            <field name="foodics_update_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="create_date" readonly="1"/>
+                            <field name="method_type" readonly="1"/>
+                            <field name="method_code" readonly="1"/>
+                            <field name="auto_open_cash_drawer" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="foodic_payment_search" model="ir.ui.view">
+        <field name="name">foodics.payment.method.mapping.search.view</field>
+        <field name="model">foodics.payment.method.mapping</field>
+        <field name="arch" type="xml">
+            <search string="Foodic Payment Method">
+                <field name="payment_id"/>
+                <field name="payment_foodics_id"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="foodics_payment_method_mapping_action" model="ir.actions.act_window">
+        <field name="name">Payment Method Mapping</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">foodics.payment.method.mapping</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="foodics_payment_method_mapping_tree_view"/>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem action="foodics_payment_method_mapping_action" id="menu_foodics_payment_mapping" 
+        parent="menu_foodics_mapping" sequence="12"/>
+
+    <!-- Foodics User Mapping View -->
+    <record id="foodics_user_mapping_tree_view" model="ir.ui.view">
+        <field name="name">foodics.user.mapping.tree</field>
+        <field name="model">foodics.user.mapping</field>
+        <field name="arch" type="xml">
+            <tree string="User Mapping" create="false" delete="false">
+                <field name="user_id"/>
+                <field name="create_date"/>
+                <field name="user_odoo_id"/>
+                <field name="user_foodics_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="foodics_user_mapping_form_view" model="ir.ui.view">
+        <field name="name">foodics.user.mapping.form</field>
+        <field name="model">foodics.user.mapping</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form string="User Mapping" create="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="user_id" readonly="1"/>
+                            <field name="user_odoo_id" readonly="1"/>
+                            <field name="user_foodics_id" readonly="1"/>
+                            <field name="foodics_created_date" readonly="1"/>
+                            <field name="foodics_update_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="create_date" readonly="1"/>
+                            <field name="foodics_user_type" readonly="1"/>
+                            <field name="foodics_user_name" readonly="1"/>
+                            <field name="foodics_employee_number" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="foodic_user_search" model="ir.ui.view">
+        <field name="name">foodics.user.mapping.search.view</field>
+        <field name="model">foodics.user.mapping</field>
+        <field name="arch" type="xml">
+            <search string="Foodic User">
+                <field name="user_id"/>
+                <field name="user_foodics_id"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="foodics_user_mapping_action" model="ir.actions.act_window">
+        <field name="name">User Mapping</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">foodics.user.mapping</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="foodics_user_mapping_tree_view"/>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem action="foodics_user_mapping_action" id="menu_foodics_user_mapping" 
+        parent="menu_foodics_mapping" sequence="14"/>
+
+    <!-- Foodics Orders (PoS Orders) Mapping View -->
+    <record id="foodics_orders_mapping_tree_view" model="ir.ui.view">
+        <field name="name">foodics.orders.mapping.tree</field>
+        <field name="model">foodics.orders.mapping</field>
+        <field name="arch" type="xml">
+            <tree string="Orders Mapping" create="false" delete="false">
+                <field name="order_id"/>
+                <field name="create_date"/>
+                <field name="order_odoo_id"/>
+                <field name="order_foodics_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="foodics_orders_mapping_form_view" model="ir.ui.view">
+        <field name="name">foodics.orders.mapping.form</field>
+        <field name="model">foodics.orders.mapping</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form string="Order Mapping" create="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="order_id" readonly="1"/>
+                            <field name="order_odoo_id" readonly="1"/>
+                            <field name="order_foodics_id" readonly="1"/>
+                            <field name="foodics_created_date" readonly="1"/>
+                            <field name="foodics_update_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="create_date" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="foodic_orders_search" model="ir.ui.view">
+        <field name="name">foodics.orders.mapping.search.view</field>
+        <field name="model">foodics.orders.mapping</field>
+        <field name="arch" type="xml">
+            <search string="Foodic Order">
+                <field name="order_id"/>
+                <field name="order_foodics_id"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="foodics_orders_mapping_action" model="ir.actions.act_window">
+        <field name="name">Orders Mapping</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">foodics.orders.mapping</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="foodics_orders_mapping_tree_view"/>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem action="foodics_orders_mapping_action" id="menu_foodics_orders_mapping" 
+        parent="menu_foodics_mapping" sequence="18"/>
+
+
+    <!-- Foodics Bussiness Hid Mapping View -->
+    <record id="bussiness_hid_mapping_tree_view" model="ir.ui.view">
+        <field name="name">business.hid.mapping.tree</field>
+        <field name="model">business.hid.mapping</field>
+        <field name="arch" type="xml">
+            <tree string="Bussiness Hid" create="false" edit="false" delete="false">
+                <field name="business_hid"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="bussiness_hid_mapping_form_view" model="ir.ui.view">
+        <field name="name">business.hid.mapping.form</field>
+        <field name="model">business.hid.mapping</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form string="Bussiness Hid" create="false" save="false" edit="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="business_hid" readonly="1"/>
+                        </group>
+                        <group>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="bussiness_hid_mapping_action" model="ir.actions.act_window">
+        <field name="name">Bussiness Id Mapping</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">business.hid.mapping</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="bussiness_hid_mapping_tree_view"/>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem action="bussiness_hid_mapping_action" id="menu_bussiness_hid_mapping" 
+        parent="menu_foodics_mapping" sequence="-1"/>
+
+
+</odoo>

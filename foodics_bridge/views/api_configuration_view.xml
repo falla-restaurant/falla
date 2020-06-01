@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="api_configuration_form_view" model="ir.ui.view">
+        <field name="name">api.configuration.form</field>
+        <field name="model">api.configuration</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form create="false" save="false" edit="false" string="Foodics Synchronization">
+                <header>
+                    <separator colspan="5" string="Foodics Synchronization"/>
+                </header>
+                <sheet>
+                    <div>
+                        <group>
+                            <group>
+                                <label for="id" string="Fetch Business Hid"/>
+                                <div>
+                                    <button icon="fa-caret-right" class="oe_highlight" name="import_business_hid" 
+                                        string="Fetch Business Hid" type="object"/>  
+                                </div>
+                            </group>
+                            <group>
+                            </group>
+                        </group>
+                    </div><br/>
+                    <div>
+                        <group>
+                            <group>
+                                <label for="id" string="Fetch/Import Branches"/>
+                                <div>
+                                    <button icon="fa-caret-right" class="oe_highlight" name="import_branch" 
+                                        string="Import Branch" type="object"/>  
+                                </div>
+                            </group>
+                            <group>
+                                <label for="id" string="Fetch/Import Categories"/>
+                                <div>
+                                    <button icon="fa-caret-right" class="oe_highlight" name="import_category" 
+                                        string="Import Category" type="object"/>  
+                                </div>
+                            </group>
+                        </group>
+                    </div><br/>
+                    <div>
+                        <group>
+                            <group>
+                                <label for="id" string="Fetch/Import Modifiers"/>
+                                <div>
+                                    <button icon="fa-caret-right" class="oe_highlight" name="import_modifiers" 
+                                        string="Import Modifiers" type="object"/>  
+                                </div>
+                            </group>
+                            <group>
+                                <label for="id" string="Fetch/Import Products"/>
+                                <div>
+                                    <button icon="fa-caret-right" class="oe_highlight" name="import_product" 
+                                        string="Import Product" type="object"/>  
+                                </div>
+                            </group>
+                        </group>
+                    </div><br/>
+                    <div>
+                        <group>
+                            <group>
+                                <label for="id" string="Fetch/Import Floor Location"/>
+                                <div>
+                                    <button icon="fa-caret-right" class="oe_highlight" name="import_floor_location" 
+                                        string="Import Floor Location" type="object"/>  
+                                </div>
+                            </group>
+                            <group>
+                                <label for="id" string="Fetch/Import Payment Method"/>
+                                <div>
+                                    <button icon="fa-caret-right" class="oe_highlight" name="import_payment_method" 
+                                        string="Import Payment Method" type="object"/>  
+                                </div>
+                            </group>
+                        </group>
+                    </div><br/>
+                    <div>
+                        <group>
+                            <group>
+                                <label for="id" string="Fetch/Import Customers"/>
+                                <div>
+                                    <button icon="fa-caret-right" class="oe_highlight" name="import_customer" 
+                                        string="Import Customer" type="object"/>  
+                                </div>
+                            </group>
+                            <group>
+                                <label for="id" string="Fetch/Import Orders"/>
+                                <div>
+                                    <button type="action" name="%(foodics_bridge.action_fetch_order_data)d"
+                                       string="Import Orders"
+                                       icon="fa-caret-right"
+                                       class="oe_highlight"/> 
+                                </div>
+                            </group>
+                        </group>
+                    </div><br/>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="api_configuration_action" model="ir.actions.act_window">
+        <field name="name">Import/Export Data</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">api.configuration</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="api_configuration_form_view"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new product
+            </p><p>
+                You must define a product for everything you sell or purchase,
+                whether it's a storable product, a consumable or a service.
+            </p>
+        </field>
+    </record>
+
+    <menuitem action="api_configuration_action" id="menu_import_export_data" parent="menu_foodics_config" sequence="2"/>
+
+</odoo>
