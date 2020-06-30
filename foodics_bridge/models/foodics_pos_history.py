@@ -46,8 +46,10 @@ class FoodicsPosHistory(models.Model):
 
     def _call_action_process(self):
         """ Called by cron job"""
-        history_data = self.search([('status', '=', 'draft')])
+        history_data = self.search([('status', '=', 'draft')], limit=4)
+        _logger.info("History data being process through cron %s", history_data)
         for process_data in history_data:
+            _logger.info("=== Runing process data === %s", process_data)
             process_data.sudo().action_process()
 
     def action_process(self):
