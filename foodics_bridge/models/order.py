@@ -159,7 +159,7 @@ class FoodicsOrderProcess(models.Model):
         session_id = session_obj.search([
             ('config_id', '=', pos_config_id),
             ('state', 'in', ('new_session', 'opened'))], limit=1)
-        _logger.info("get_pos_session -> session_id %s", session_id)
+        _logger.info("get_pos_session -> session_id %s config_id %s", session_id, pos_config_id)
         if session_id:
             dt = datetime.datetime.strptime(
                 str(session_id.start_at), '%Y-%m-%d %H:%M:%S')
@@ -239,12 +239,12 @@ class FoodicsOrderProcess(models.Model):
                 open_session_id.action_pos_session_closing_control()
                 _logger.info("==session status after close call== %s", open_session_id.state)
 
-
             session_id = session_obj.create({
                 'user_id': self.env.uid,
                 'config_id': pos_config_id,
                 'start_at': business_date,
             })
+            _logger.info("== New created session id -> %s", session_id)
             return session_id
 
     def get_order_line(self, order_dic):
@@ -256,6 +256,8 @@ class FoodicsOrderProcess(models.Model):
                     ('product_foodics_id', '=', line_data['product_hid'])])
                 _logger.info("== Product Mapping ID %s %s", pro_map_id, line_data['product_hid'])
                 if pro_map_id:
+                    if pro_map_id.product_id.active == False:
+                       pro_map_id.product_id.write({'active': True}) 
                     if not line_data['options']:
                         if not pro_map_id.product_id.attribute_line_ids:
                             product_pro_id  = self.env['product.product'].search(
@@ -450,7 +452,7 @@ class FoodicsOrderProcess(models.Model):
                         'price_subtotal': order_dic['discount_amount'] * -1,
                         'price_subtotal_incl': order_dic['discount_amount'] * -1,
                     }))
-        
+
         return order_line_list
 
     def process_orders(self, history_obj, data):
@@ -633,7 +635,7 @@ class FoodicsOrderProcess(models.Model):
                         if branch_mapping_id:
                             picking_type_id = self.env['stock.picking.type'].search([
                                 ('name', '=', 'PoS Orders'),
-                              ('warehouse_id', '=', branch_mapping_id.branch_id.id)], limit=1)
+                                ('warehouse_id', '=', branch_mapping_id.branch_id.id)], limit=1)
                             pos_config_id = self.env['pos.config'].search([
                                 ('picking_type_id', '=', picking_type_id.id)], limit=1)
 
