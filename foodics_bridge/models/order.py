@@ -254,6 +254,7 @@ class FoodicsOrderProcess(models.Model):
             if not line_data['void_reason']:
                 pro_map_id = self.env['foodics.product.mapping'].search([
                     ('product_foodics_id', '=', line_data['product_hid'])])
+                _logger.info("== Product Mapping ID %s %s", pro_map_id, line_data['product_hid'])
                 if pro_map_id:
                     if not line_data['options']:
                         if not pro_map_id.product_id.attribute_line_ids:
