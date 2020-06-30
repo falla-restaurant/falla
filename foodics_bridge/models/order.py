@@ -7,6 +7,9 @@ import requests
 from datetime import date
 import datetime
 
+import logging
+_logger = logging.getLogger(__name__)
+
 
 class PosOrderInherit(models.Model):
     _inherit = "pos.order"
@@ -116,8 +119,6 @@ class FoodicsOrderProcess(models.Model):
             if dt.date() < date.today():
                 try:
                     session_id.action_pos_session_closing_control()
-                    session_id.action_pos_session_close()
-                    session_id.write({'state': 'closed'})
                 except:
                     pass
 
@@ -153,10 +154,12 @@ class FoodicsOrderProcess(models.Model):
 
     def get_pos_session(self, pos_config_id, business_date):
         # session date should be business date
+        _logger.info("Called get_pos_session")
         session_obj = self.env['pos.session']
         session_id = session_obj.search([
             ('config_id', '=', pos_config_id),
             ('state', 'in', ('new_session', 'opened'))], limit=1)
+        _logger.info("get_pos_session -> session_id %s", session_id)
         if session_id:
             dt = datetime.datetime.strptime(
                 str(session_id.start_at), '%Y-%m-%d %H:%M:%S')
@@ -169,7 +172,7 @@ class FoodicsOrderProcess(models.Model):
                     if order_id.state != 'paid':
                         if round(order_id.amount_total, 2) == round(order_id.amount_paid, 2):
                             order_id.action_pos_order_paid()
-                            self._cr.commit()
+                            #self._cr.commit()
                         else:
                             if order_id.amount_total != order_id.amount_paid:
                                 adjustment_amount = order_id.amount_total - order_id.amount_paid
@@ -189,9 +192,9 @@ class FoodicsOrderProcess(models.Model):
                                         order_id._onchange_amount_all()
                                         order_id.action_pos_order_paid()
 
+                _logger.info("==session status== %s", session_id.state)
                 session_id.action_pos_session_closing_control()
-                session_id.action_pos_session_close()
-                session_id.write({'state': 'closed'})
+                _logger.info("==session status after close call== %s", session_id.state)
 
                 session_id = session_obj.create({
                     'user_id': self.env.uid,
@@ -201,9 +204,11 @@ class FoodicsOrderProcess(models.Model):
                 return session_id
         else:
             # check if any session open for this user and conf - close if any
-            open_session_id = session_obj.search([('user_id', '=', self.env.uid),
-                                                  ('config_id', '=', pos_config_id)], limit=1)
-            if open_session_id:
+            open_session_res = session_obj.search([('user_id', '=', self.env.uid),
+                                                  ('config_id', '=', pos_config_id),
+                                                  ('state', 'in', ['opened'])])
+            _logger.info("== open_session_res == %s", open_session_res)
+            for open_session_id in open_session_res:
                 pos_orders = self.env['pos.order'].search([('session_id', '=', open_session_id.id)])
                 for order_id in pos_orders:
                     if order_id.state != 'paid':
@@ -230,9 +235,10 @@ class FoodicsOrderProcess(models.Model):
                                         order_id.action_pos_order_paid()
                                         self._cr.commit()
 
+                _logger.info("==session status== %s", open_session_id.state)
                 open_session_id.action_pos_session_closing_control()
-                open_session_id.action_pos_session_close()
-                open_session_id.write({'state': 'closed'})
+                _logger.info("==session status after close call== %s", open_session_id.state)
+
 
             session_id = session_obj.create({
                 'user_id': self.env.uid,
@@ -284,7 +290,7 @@ class FoodicsOrderProcess(models.Model):
                             else:
                                 # This case Need to be dicuss
                                 order_line_list.append((0, 0, {
-                                    'product_id': product_pro_ids[0],
+                                    'product_id': product_pro_ids[0].id,
                                     'qty': line_data['quantity'],
                                     'price_unit': line_data['displayable_original_price'],
                                     'price_subtotal': line_data['final_price'],
@@ -606,9 +612,10 @@ class FoodicsOrderProcess(models.Model):
         if order_li:
             for order_dic in order_li:
                 if 'reference' in order_dic and order_dic['status'] == 4:
-                #if order_dic['reference'] == 'QNWTB01C01338300000002':
+                #if order_dic['reference'] == 'QNWTB03C012711600001':
                     order_id = pos_order_obj.search(
                         [('foodic_name', '=', order_dic['reference'])])
+                    _logger.info("== order ref in process == %s", order_dic['reference'])
                     if not order_id:
                         # Search Branch
                         branch_mapping_id = self.env['foodics.branch.mapping'].search([
@@ -616,9 +623,10 @@ class FoodicsOrderProcess(models.Model):
                         if branch_mapping_id:
                             picking_type_id = self.env['stock.picking.type'].search([
                                 ('name', '=', 'PoS Orders'),
-                                ('warehouse_id', '=', branch_mapping_id.branch_id.id)], limit=1)
+                              ('warehouse_id', '=', branch_mapping_id.branch_id.id)], limit=1)
                             pos_config_id = self.env['pos.config'].search([
                                 ('picking_type_id', '=', picking_type_id.id)], limit=1)
+
                             # PoS session search or create
                             session_id = self.get_pos_session(
                                 pos_config_id.id, order_dic['business_date'])
@@ -709,8 +717,7 @@ class FoodicsOrderProcess(models.Model):
                         # if order_id.amount_total == order_id.amount_paid:
                         #     order_id.action_pos_order_paid()
 
-                        print("===-----483---", order_id.amount_total - order_id.amount_paid,
-                              order_dic['reference'])
+                        #_logger.info("== Amount diff between total and paid %s %s", order_dic['reference'], order_id.amount_total - order_id.amount_paid)
 
                         # Create mapping record for order
                         mapping_rec_id = order_mapping_obj.create({
@@ -721,7 +728,7 @@ class FoodicsOrderProcess(models.Model):
                             'foodics_update_date': order_dic['updated_at'],
                         })
                         history_obj.write({'status': 'done'})
-                        self._cr.commit()
+                        #self._cr.commit()
                     else:
                         order_mapping_id = order_mapping_obj.search(
                             [('order_id', '=', order_id.id)])

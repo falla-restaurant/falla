@@ -9,6 +9,13 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
+class ProductTemplateInherit(models.Model):
+    _inherit = "product.template"
+
+    foodid_id = fields.Char(string='Hid')
+
+
+
 class FoodicsGetProduct(models.Model):
     _name = "foodics.get.product"
     _inherit = ['mail.thread', 'mail.activity.mixin', 'image.mixin']
@@ -158,7 +165,16 @@ class FoodicsCategoryProduct(models.Model):
                     else:
                         tax_id = False
                     product_id = product_obj.search(
-                        [('name', '=', product_en_name)])
+                        [('name', '=', product_en_name),
+                         ('foodid_id', '=', product_dic['hid'])])
+
+                    if not product_id:
+                        product_id = product_obj.search(
+                            [('name', '=', product_en_name),
+                             ('available_in_pos', '=', True)], limit=1)
+                        if product_id:
+                            product_id.write({'foodid_id': product_dic['hid']})
+
                     if not product_id:
                         #if product_en_name == "DAMAAR":
                         if product_dic['description']:
@@ -182,6 +198,7 @@ class FoodicsCategoryProduct(models.Model):
                             'description': description,
                             'barcode': barcode,
                             'available_in_pos': 1,
+                            'foodid_id': product_dic['hid'],
                             'categ_id': category_id.category_id.id if category_id else 1,
                         })
                         if tax_id:
@@ -235,12 +252,18 @@ class FoodicsCategoryProduct(models.Model):
                                                      ('attribute_id', '=', modifier_mapping_id.product_id.id)], limit=1)
                                                 value_list.append(value_id.id)
 
-                                        variant_id = variant_obj.create({
-                                            'attribute_id': modifier_mapping_id.product_id.id,
-                                            'value_ids': [(6, 0, value_list)],
-                                            'product_tmpl_id': product_id.id,
-                                        })
-                                        self._cr.commit()
+
+                                        variant_id = variant_obj.search(
+                                            [('attribute_id', '=', modifier_mapping_id.product_id.id),
+                                             ('product_tmpl_id', '=', product_id.id)])
+
+                                        if not variant_id:
+                                            variant_id = variant_obj.create({
+                                                'attribute_id': modifier_mapping_id.product_id.id,
+                                                'value_ids': [(6, 0, value_list)],
+                                                'product_tmpl_id': product_id.id,
+                                            })
+                                            self._cr.commit()
                 else:
                     history_obj.write({'status': 'exceptions'})
         else:
