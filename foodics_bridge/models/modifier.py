@@ -105,33 +105,56 @@ class FoodicsModifiersProduct(models.Model):
                 if 'name' in attribute_dic:
                     # Attribute create or select
                     attribute_en_name = attribute_dic['name']['en']
-                    mdfrs = ['Broccoli', 'Onion', 'Chicken', 'Jalapeno']
-                    if attribute_en_name in mdfrs: # To be remove after testing
-                        print("===#####110######------", attribute_en_name)
-                        attribute_id = attribute_obj.search(
-                            [('name', '=', attribute_en_name)])
-                        if not attribute_id:
-                            attribute_id = attribute_obj.create({
-                                'name': attribute_en_name,
-                                'create_variant': 'always',
-                            })
+
+                    # foodic_modifier_str = str(self.env['ir.config_parameter'].sudo().get_param('foodic.modifier')) or []
+                    # mdfrs = foodic_modifier_str.split(',')
+                    # if attribute_en_name in mdfrs: # To be remove after testing
+                    attribute_id = attribute_obj.search(
+                        [('name', '=', attribute_en_name)])
+                    if not attribute_id:
+                        attribute_id = attribute_obj.create({
+                            'name': attribute_en_name,
+                            'create_variant': 'always',
+                        })
+                        value_li = []
+                        for attribute_value in attribute_dic['options']:
+                            value_en_name = attribute_value['name']['en']
+                            value_id = attribute_value_obj.search([
+                                ('name', '=', value_en_name),
+                                ('attribute_id', '=', attribute_id.id)])
+                            if not value_id:
+                                value_id = attribute_value_obj.create({
+                                    'name': value_en_name,
+                                    'attribute_id': attribute_id.id,
+                                })
+                                value_li.append((0, 0, {
+                                    'name': value_en_name,
+                                    'option_foodics_id': attribute_value['hid'],
+                                }))
+
+                        # Create mapping record
+                        mapping_rec_id = attribute_mapping_obj.create({
+                            'product_id': attribute_id.id,
+                            'product_odoo_id': attribute_id.id,
+                            'modifier_foodics_id': attribute_dic['hid'],
+                            'sku': attribute_dic['sku'],
+                            'value_ids': value_li,
+                            'foodics_created_date': attribute_dic['created_at'],
+                            'foodics_update_date': attribute_dic['updated_at'],
+                        })
+                        history_obj.write({'status': 'done'})
+                        self._cr.commit()
+                    else:
+                        product_mapping_id = attribute_mapping_obj.search(
+                            [('product_id', '=', attribute_id.id)])
+                        if not product_mapping_id:
                             value_li = []
                             for attribute_value in attribute_dic['options']:
                                 value_en_name = attribute_value['name']['en']
-                                value_id = attribute_value_obj.search([
-                                    ('name', '=', value_en_name),
-                                    ('attribute_id', '=', attribute_id.id)])
-                                if not value_id:
-                                    value_id = attribute_value_obj.create({
-                                        'name': value_en_name,
-                                        'attribute_id': attribute_id.id,
-                                    })
-                                    value_li.append((0, 0, {
-                                        'name': value_en_name,
-                                        'option_foodics_id': attribute_value['hid'],
-                                    }))
-
-                            # Create mapping record
+                                value_li.append((0, 0, {
+                                    'name': value_en_name,
+                                    'option_foodics_id': attribute_value['hid'],
+                                }))
                             mapping_rec_id = attribute_mapping_obj.create({
                                 'product_id': attribute_id.id,
                                 'product_odoo_id': attribute_id.id,
@@ -141,29 +164,7 @@ class FoodicsModifiersProduct(models.Model):
                                 'foodics_created_date': attribute_dic['created_at'],
                                 'foodics_update_date': attribute_dic['updated_at'],
                             })
-                            history_obj.write({'status': 'done'})
-                            self._cr.commit()
-                        else:
-                            product_mapping_id = attribute_mapping_obj.search(
-                                [('product_id', '=', attribute_id.id)])
-                            if not product_mapping_id:
-                                value_li = []
-                                for attribute_value in attribute_dic['options']:
-                                    value_en_name = attribute_value['name']['en']
-                                    value_li.append((0, 0, {
-                                        'name': value_en_name,
-                                        'option_foodics_id': attribute_value['hid'],
-                                    }))
-                                mapping_rec_id = attribute_mapping_obj.create({
-                                    'product_id': attribute_id.id,
-                                    'product_odoo_id': attribute_id.id,
-                                    'modifier_foodics_id': attribute_dic['hid'],
-                                    'sku': attribute_dic['sku'],
-                                    'value_ids': value_li,
-                                    'foodics_created_date': attribute_dic['created_at'],
-                                    'foodics_update_date': attribute_dic['updated_at'],
-                                })
-                            history_obj.write({'status': 'done'})
+                        history_obj.write({'status': 'done'})
 
                 else:
                     history_obj.write({'status': 'exceptions'})
