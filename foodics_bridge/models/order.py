@@ -239,7 +239,7 @@ class FoodicsOrderProcess(models.Model):
             # check if any session open for this user and conf - close if any
             open_session_res = session_obj.search([('user_id', '=', self.env.uid),
                                                   ('config_id', '=', pos_config_id),
-                                                  ('state', 'in', ['opened'])])
+                                                  ('state', 'in', ['opened', 'closing_control'])])
             _logger.info("== open_session_res == %s", open_session_res)
             for open_session_id in open_session_res:
                 pos_orders = self.env['pos.order'].search([('session_id', '=', open_session_id.id)])
