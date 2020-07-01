@@ -158,19 +158,21 @@ class FoodicsOrderProcess(models.Model):
         payment_obj = self.env['pos.payment']
         mapping_obj = self.env['foodics.orders.mapping']
 
-        line_ids = line_obj.search([('order_id', '=', order_id.id)])
-        for line_id in line_ids:
-            line_id.unlink()
+        if order_id:
+            payment_ids = payment_obj.search([('pos_order_id', '=', order_id.id)])
+            for payment_id in payment_ids:
+                payment_id.unlink()
 
-        payment_ids = payment_obj.search([('pos_order_id', '=', order_id.id)])
-        for payment_id in payment_ids:
-            payment_id.unlink()
+            mapping_ids = mapping_obj.search([('order_id', '=', order_id.id)])
+            for mapping_id in mapping_ids:
+                mapping_id.write({'order_id': False})
+                mapping_id.unlink()
 
-        mapping_ids = mapping_obj.search([('order_id', '=', order_id.id)])
-        for mapping_id in mapping_ids:
-            mapping_id.unlink()
-        
-        order_id.unlink()
+            line_ids = line_obj.search([('order_id', '=', order_id.id)])
+            for line_id in line_ids:
+                line_id.unlink()
+            
+            order_id.unlink()
 
     def get_pos_session(self, pos_config_id, business_date):
         # session date should be business date
