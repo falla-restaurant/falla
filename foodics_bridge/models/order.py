@@ -165,7 +165,6 @@ class FoodicsOrderProcess(models.Model):
 
             mapping_ids = mapping_obj.search([('order_id', '=', order_id.id)])
             for mapping_id in mapping_ids:
-                mapping_id.write({'order_id': False})
                 mapping_id.unlink()
 
             line_ids = line_obj.search([('order_id', '=', order_id.id)])
@@ -795,20 +794,20 @@ class FoodicsOrderProcess(models.Model):
                                 try:
                                     order_id.action_pos_order_paid()
                                     foo_pos_order_res.write({'status': 'done'})
+                                    # Create mapping record for order
+                                    mapping_rec_id = order_mapping_obj.create({
+                                        'order_id': order_id.id,
+                                        'order_odoo_id': order_id.id,
+                                        'order_foodics_id': order_dic['hid'],
+                                        'foodics_created_date': order_dic['created_at'],
+                                        'foodics_update_date': order_dic['updated_at'],
+                                    })
+                                    history_obj.write({'status': 'done'})
+                                    #self._cr.commit()
                                 except Exception as e:
                                     foo_pos_order_res.write({'status': 'exceptions',
                                                              'fail_reason': str(e)})
 
-                            # Create mapping record for order
-                            mapping_rec_id = order_mapping_obj.create({
-                                'order_id': order_id.id,
-                                'order_odoo_id': order_id.id,
-                                'order_foodics_id': order_dic['hid'],
-                                'foodics_created_date': order_dic['created_at'],
-                                'foodics_update_date': order_dic['updated_at'],
-                            })
-                            history_obj.write({'status': 'done'})
-                            #self._cr.commit()
                         else:
                             order_mapping_id = order_mapping_obj.search(
                                 [('order_id', '=', order_id.id)])
