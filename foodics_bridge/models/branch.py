@@ -111,6 +111,7 @@ class FoodicsBranchProcess(models.Model):
         get_data_in_dic = json.loads(data)
         branchs_li = get_data_in_dic['branches']
         if branchs_li:
+            configuration_obj = self.env['foodics.configuration'].search([], limit=1)
             for branch_dic in branchs_li:
                 if 'name' in branch_dic:
                     branch_en_name = branch_dic['name']['en']
@@ -119,36 +120,49 @@ class FoodicsBranchProcess(models.Model):
                     
                     # Warehouse create
                     if not warehouse_id:
-                        try:
-                            warehouse_id = warehouse_obj.create({
-                                'name': branch_en_name,
-                                'code': branch_dic['reference'],
-                            })
-                        except:
-                            history_obj.write({'status': 'exceptions'})
+                        if configuration_obj.warehouse_create == True:
+                            try:
+                                warehouse_id = warehouse_obj.create({
+                                    'name': branch_en_name,
+                                    'code': branch_dic['reference'],
+                                })
+                            except:
+                                history_obj.write({'status': 'exceptions'})
 
-                        # Create PoS Config
-                        picking_type_id = self.env['stock.picking.type'].search([
-                                ('name', '=', 'PoS Orders'),
-                                ('warehouse_id', '=', warehouse_id.id)], limit=1)
-                        try:
-                            pos_config_id = pos_config_obj.create({
-                                'name': branch_en_name,
-                                'module_pos_restaurant': True,
-                                'picking_type_id': picking_type_id.id if picking_type_id else False,
-                            })
-                        except:
-                            history_obj.write({'status': 'exceptions'})
+                            # Create PoS Config
+                            picking_type_id = self.env['stock.picking.type'].search([
+                                    ('name', '=', 'PoS Orders'),
+                                    ('warehouse_id', '=', warehouse_id.id)], limit=1)
+                            try:
+                                pos_config_id = pos_config_obj.create({
+                                    'name': branch_en_name,
+                                    'module_pos_restaurant': True,
+                                    'picking_type_id': picking_type_id.id if picking_type_id else False,
+                                })
+                            except:
+                                history_obj.write({'status': 'exceptions'})
 
-                        # Create mapping record
-                        mapping_rec_id = branch_mapping_obj.create({
-                            'branch_id': warehouse_id.id,
-                            'branch_odoo_id': warehouse_id.id,
-                            'branch_foodics_id': branch_dic['hid'],
-                            'foodics_created_date': branch_dic['created_at'],
-                            'foodics_update_date': branch_dic['updated_at'],
-                        })
-                        history_obj.write({'status': 'done'})
+                            # Create mapping record
+                            mapping_rec_id = branch_mapping_obj.create({
+                                'branch_id': warehouse_id.id,
+                                'branch_name': branch_en_name,
+                                'branch_odoo_id': warehouse_id.id,
+                                'branch_foodics_id': branch_dic['hid'],
+                                'foodics_created_date': branch_dic['created_at'],
+                                'foodics_update_date': branch_dic['updated_at'],
+                            })
+                            history_obj.write({'status': 'done'})
+                        else:
+                            # Create mapping record
+                            mapping_rec_id = branch_mapping_obj.create({
+                                #'branch_id': ,
+                                'branch_name': branch_en_name,
+                                #'branch_odoo_id': warehouse_id.id,
+                                'branch_foodics_id': branch_dic['hid'],
+                                'foodics_created_date': branch_dic['created_at'],
+                                'foodics_update_date': branch_dic['updated_at'],
+                            })
+                            history_obj.write({'status': 'done'})
                     else:
                         # Create PoS Config
                         picking_type_id = self.env['stock.picking.type'].search([
@@ -171,11 +185,14 @@ class FoodicsBranchProcess(models.Model):
                         if not branch_mapping_id:
                             mapping_rec_id = branch_mapping_obj.create({
                                 'branch_id': warehouse_id.id,
+                                'branch_name': branch_en_name,
                                 'branch_odoo_id': warehouse_id.id,
                                 'branch_foodics_id': branch_dic['hid'],
                                 'foodics_created_date': branch_dic['created_at'],
                                 'foodics_update_date': branch_dic['updated_at'],
                             })
+                        else:
+                            branch_mapping_id.write({'branch_name': branch_en_name})
                         history_obj.write({'status': 'done'})
                 else:
                     history_obj.write({'status': 'exceptions'})

@@ -264,7 +264,7 @@ class FoodicsOrderProcess(models.Model):
                                                 [('product_tmpl_id', '=', pro_map_id.product_id.id)], limit=1)
                             order_line_list.append((0, 0, {
                                 'product_id': product_pro_id.id,
-                                'product_uom_id': product_pro_id.uom_id.id,
+                                #'product_uom_id': product_pro_id.uom_id.id,
                                 'qty': line_data['quantity'],
                                 'price_unit': line_data['displayable_original_price'],
                                 'price_subtotal': line_data['final_price'],
@@ -286,7 +286,7 @@ class FoodicsOrderProcess(models.Model):
                             if default_product > 0:
                                 order_line_list.append((0, 0, {
                                     'product_id': default_product,
-                                    'product_uom_id': product_pro_ids[0].uom_id.id,
+                                    #'product_uom_id': product_pro_ids[0].uom_id.id,
                                     'qty': line_data['quantity'],
                                     'price_unit': line_data['displayable_original_price'],
                                     'price_subtotal': line_data['final_price'],
@@ -296,7 +296,7 @@ class FoodicsOrderProcess(models.Model):
                                 # This case Need to be dicuss
                                 order_line_list.append((0, 0, {
                                     'product_id': product_pro_ids[0].id,
-                                    'product_uom_id': product_pro_ids[0].uom_id.id,
+                                    #'product_uom_id': product_pro_ids[0].uom_id.id,
                                     'qty': line_data['quantity'],
                                     'price_unit': line_data['displayable_original_price'],
                                     'price_subtotal': line_data['final_price'],
@@ -360,7 +360,7 @@ class FoodicsOrderProcess(models.Model):
                             if default_product > 0:
                                 order_line_list.append((0, 0, {
                                     'product_id': default_product,
-                                    'product_uom_id': product_pro_ids[0].uom_id.id,
+                                    #'product_uom_id': product_pro_ids[0].uom_id.id,
                                     'qty': line_data['quantity'],
                                     'price_unit': line_data['displayable_original_price'] + addon_total_incl,
                                     'price_subtotal': line_data['final_price'],
@@ -371,7 +371,7 @@ class FoodicsOrderProcess(models.Model):
                                                 [('product_tmpl_id', '=', pro_map_id.product_id.id)], limit=1)
                             order_line_list.append((0, 0, {
                                 'product_id': product_pro_id.id,
-                                'product_uom_id': product_pro_id.uom_id.id,
+                                #'product_uom_id': product_pro_id.uom_id.id,
                                 'qty': line_data['quantity'],
                                 'price_unit': line_data['displayable_original_price'] + addon_total_incl,
                                 'price_subtotal': line_data['final_price'],
@@ -390,7 +390,7 @@ class FoodicsOrderProcess(models.Model):
 
                 order_line_list.append((0, 0, {
                     'product_id': delivery_product_id.id,
-                    'product_uom_id': delivery_product_id.uom_id.id,
+                    #'product_uom_id': delivery_product_id.uom_id.id,
                     'qty': 1,
                     'price_unit': order_dic['delivery_price'],
                     'price_subtotal': order_dic['delivery_price'],
@@ -406,7 +406,7 @@ class FoodicsOrderProcess(models.Model):
 
                     order_line_list.append((0, 0, {
                         'product_id': product_id.id,
-                        'product_uom_id': product_id.uom_id.id,
+                        #'product_uom_id': product_id.uom_id.id,
                         'qty': 1,
                         'price_unit': order_dic['delivery_price'],
                         'price_subtotal': order_dic['delivery_price'],
@@ -424,7 +424,7 @@ class FoodicsOrderProcess(models.Model):
 
                 order_line_list.append((0, 0, {
                     'product_id': discount_product_id.id,
-                    'product_uom_id': discount_product_id.uom_id.id,
+                    #'product_uom_id': discount_product_id.uom_id.id,
                     'qty': 1,
                     'price_unit': order_dic['discount_amount'] * -1,
                     'price_subtotal': order_dic['discount_amount'] * -1,
@@ -446,7 +446,7 @@ class FoodicsOrderProcess(models.Model):
 
                     order_line_list.append((0, 0, {
                         'product_id': product_id.id,
-                        'product_uom_id': product_id.uom_id.id,
+                        #'product_uom_id': product_id.uom_id.id,
                         'qty': 1,
                         'price_unit': order_dic['discount_amount'] * -1,
                         'price_subtotal': order_dic['discount_amount'] * -1,

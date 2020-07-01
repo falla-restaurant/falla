@@ -164,17 +164,25 @@ class FoodicsCategoryProduct(models.Model):
                         tax_id = self.get_product_tax(product_dic, product_en_name)
                     else:
                         tax_id = False
-                    product_id = product_obj.search(
-                        [('name', '=', product_en_name),
-                         ('foodid_id', '=', product_dic['hid'])])
+                    # product_id = product_obj.search(
+                    #     [('name', '=', product_en_name),
+                    #      ('foodid_id', '=', product_dic['hid']),
+                    #      ('active', '=', True)])
 
-                    if not product_id:
-                        product_id = product_obj.search(
-                            [('name', '=', product_en_name),
-                             ('available_in_pos', '=', True)], limit=1)
-                        if product_id:
-                            product_id.write({'foodid_id': product_dic['hid']})
+                    # if not product_id:
+                    #     product_id = product_obj.search(
+                    #         [('name', '=', product_en_name),
+                    #          ('available_in_pos', '=', True),
+                    #          ('active', '=', True)], limit=1)
+                    #     if product_id:
+                    #         product_id.write({'foodid_id': product_dic['hid']})
 
+                    product_id = False
+                    product_mapping_id = product_mapping_obj.search(
+                                [('product_foodics_id', '=', product_dic['hid']),
+                                 ('product_id', '!=', False)])
+                    if product_mapping_id:
+                        product_id = product_mapping_id[0].product_id
                     if not product_id:
                         #if product_en_name == "DAMAAR":
                         if product_dic['description']:
@@ -218,17 +226,22 @@ class FoodicsCategoryProduct(models.Model):
                         history_obj.write({'status': 'done'})
                         self._cr.commit()
                     else:
-                        product_mapping_id = product_mapping_obj.search(
-                            [('product_id', '=', product_id.id)], limit=1)
-                        if not product_mapping_id:
-                            mapping_rec_id = product_mapping_obj.create({
-                                'product_id': product_id.id,
-                                'product_odoo_id': product_id.id,
-                                'product_foodics_id': product_dic['hid'],
-                                'sku': product_dic['sku'],
-                                'foodics_created_date': product_dic['created_at'],
-                                'foodics_update_date': product_dic['updated_at'],
-                            })
+                        product_mapping_res = product_mapping_obj.search(
+                            [('product_id', '=', product_id.id)])
+                        if not product_mapping_res:
+                            product_mapping_id = product_mapping_obj.search(
+                                [('product_foodics_id', '=', product_dic['hid'])])
+                            if product_mapping_id:
+                                product_mapping_id.write({'product_id': product_id.id})
+                            else:
+                                mapping_rec_id = product_mapping_obj.create({
+                                    'product_id': product_id.id,
+                                    'product_odoo_id': product_id.id,
+                                    'product_foodics_id': product_dic['hid'],
+                                    'sku': product_dic['sku'],
+                                    'foodics_created_date': product_dic['created_at'],
+                                    'foodics_update_date': product_dic['updated_at'],
+                                })
                         history_obj.write({'status': 'done'})
 
                     # Create modifiers
