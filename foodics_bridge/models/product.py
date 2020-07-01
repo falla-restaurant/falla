@@ -245,41 +245,42 @@ class FoodicsCategoryProduct(models.Model):
                         history_obj.write({'status': 'done'})
 
                     # Create modifiers
-                    variant_obj = self.env['product.template.attribute.line']
-                    if product_dic['modifiers']:
-                        for modifiers_data in product_dic['modifiers']:
-                            if modifiers_data['relationship_data']:
-                                modifier_mapping_id = self.env['foodics.modifier.mapping'].search(
-                                        [('modifier_foodics_id', '=', modifiers_data['hid'])])
-                                if modifier_mapping_id:
-                                    excluded_options_li = []
-                                    value_list = []
-                                    for excluded_hid in modifiers_data['relationship_data']['excluded_options']:
-                                        excluded_options_li.append(excluded_hid)
+                    if product_id.name == 'MONALISA CHICKEN':
+                        variant_obj = self.env['product.template.attribute.line']
+                        if product_dic['modifiers']:
+                            for modifiers_data in product_dic['modifiers']:
+                                if modifiers_data['relationship_data']:
+                                    modifier_mapping_id = self.env['foodics.modifier.mapping'].search(
+                                            [('modifier_foodics_id', '=', modifiers_data['hid'])])
+                                    if modifier_mapping_id:
+                                        excluded_options_li = []
+                                        value_list = []
+                                        for excluded_hid in modifiers_data['relationship_data']['excluded_options']:
+                                            excluded_options_li.append(excluded_hid)
 
-                                    for option_values in modifier_mapping_id.value_ids:
-                                        if option_values.option_foodics_id not in excluded_options_li:
-                                            value_id = self.env['product.attribute.value'].search(
-                                                [('name', '=', option_values.name),
-                                                 ('attribute_id', '=', modifier_mapping_id.product_id.id)], limit=1)
-                                            value_list.append(value_id.id)
-                                    for value_data in modifier_mapping_id.product_id.value_ids:
-                                        if value_data.is_default:
-                                            if value_data.id not in value_list:
-                                                value_list.append(value_data.id)
+                                        for option_values in modifier_mapping_id.value_ids:
+                                            if option_values.option_foodics_id not in excluded_options_li:
+                                                value_id = self.env['product.attribute.value'].search(
+                                                    [('name', '=', option_values.name),
+                                                     ('attribute_id', '=', modifier_mapping_id.product_id.id)], limit=1)
+                                                value_list.append(value_id.id)
+                                        for value_data in modifier_mapping_id.product_id.value_ids:
+                                            if value_data.is_default:
+                                                if value_data.id not in value_list:
+                                                    value_list.append(value_data.id)
 
 
-                                    variant_id = variant_obj.search(
-                                        [('attribute_id', '=', modifier_mapping_id.product_id.id),
-                                         ('product_tmpl_id', '=', product_id.id)])
+                                        variant_id = variant_obj.search(
+                                            [('attribute_id', '=', modifier_mapping_id.product_id.id),
+                                             ('product_tmpl_id', '=', product_id.id)])
 
-                                    if not variant_id:
-                                        variant_id = variant_obj.create({
-                                            'attribute_id': modifier_mapping_id.product_id.id,
-                                            'value_ids': [(6, 0, value_list)],
-                                            'product_tmpl_id': product_id.id,
-                                        })
-                                        #self._cr.commit()
+                                        if not variant_id:
+                                            variant_id = variant_obj.create({
+                                                'attribute_id': modifier_mapping_id.product_id.id,
+                                                'value_ids': [(6, 0, value_list)],
+                                                'product_tmpl_id': product_id.id,
+                                            })
+                                            #self._cr.commit()
                 else:
                     history_obj.write({'status': 'exceptions'})
         else:
