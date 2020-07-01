@@ -138,6 +138,7 @@ class FoodicsBranchProcess(models.Model):
                                     'name': branch_en_name,
                                     'module_pos_restaurant': True,
                                     'picking_type_id': picking_type_id.id if picking_type_id else False,
+                                    'company_id': warehouse_id.company_id.id,
                                 })
                             except:
                                 history_obj.write({'status': 'exceptions'})
@@ -155,7 +156,7 @@ class FoodicsBranchProcess(models.Model):
                         else:
                             # Create mapping record
                             mapping_rec_id = branch_mapping_obj.create({
-                                #'branch_id': ,
+                                #'branch_id': warehouse_id.id,
                                 'branch_name': branch_en_name,
                                 #'branch_odoo_id': warehouse_id.id,
                                 'branch_foodics_id': branch_dic['hid'],
@@ -177,6 +178,7 @@ class FoodicsBranchProcess(models.Model):
                                     'name': branch_en_name,
                                     'module_pos_restaurant': True,
                                     'picking_type_id': picking_type_id.id if picking_type_id else False,
+                                    'company_id': warehouse_id.company_id.id,
                                 })
                             
                         # Create mapping record
