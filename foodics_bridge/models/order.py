@@ -190,6 +190,10 @@ class FoodicsOrderProcess(models.Model):
             else:
                 pos_orders = self.env['pos.order'].search([('session_id', '=', session_id.id)])
                 for order_id in pos_orders:
+                    history_res = self.env['foodics.pos.history'].search(
+                                                [('api_type', '=', 'PoS_Orders'),
+                                                 ('status', 'in', ['draft', 'inprocess']),
+                                                 ('foodic_order_ref', '=', order_id.foodic_name)])
                     if order_id.state == 'draft':
                         if round(order_id.amount_total, 2) == round(order_id.amount_paid, 2):
                             order_id.action_pos_order_paid()
@@ -211,16 +215,19 @@ class FoodicsOrderProcess(models.Model):
                                             'price_subtotal_incl': float(adjustment_amount) * -1,
                                         })
                                         order_id._onchange_amount_all()
-                                        order_id.action_pos_order_paid()
-                                else:
-                                    foodic_history_res = self.env['foodics.pos.history'].search(
-                                            [('api_type', '=', 'PoS_Orders'),
-                                             ('status', 'in', ['draft', 'inprocess']),
-                                             ('foodic_order_ref', '=', order_id.foodic_name)])
-                                    for unbalanced_history_id in foodic_history_res:
-                                        unbalanced_history_id.write({'status': 'exceptions',
-                                                                     'fail_reason': 'unbalanced amounts'})
+                                        try:
+                                            order_id.action_pos_order_paid()
+                                            for history_id in history_res:
+                                                history_id.write({'status': 'done'})
+                                        except Exception as e:
+                                            history_id.write({'status': 'exceptions',
+                                                              'fail_reason': 'unbalanced amounts'})
+                                            self.remove_unmatched_orders(order_id)
 
+                                else:
+                                    for history_id in history_res:
+                                        history_id.write({'status': 'exceptions',
+                                                          'fail_reason': 'unbalanced amounts'})
                                     self.remove_unmatched_orders(order_id)
                                     
                                     
@@ -244,6 +251,10 @@ class FoodicsOrderProcess(models.Model):
             for open_session_id in open_session_res:
                 pos_orders = self.env['pos.order'].search([('session_id', '=', open_session_id.id)])
                 for order_id in pos_orders:
+                    history_res = self.env['foodics.pos.history'].search(
+                                                [('api_type', '=', 'PoS_Orders'),
+                                                 ('status', 'in', ['draft', 'inprocess']),
+                                                 ('foodic_order_ref', '=', order_id.foodic_name)])
                     if order_id.state == 'draft':
                         if round(order_id.amount_total, 2) == round(order_id.amount_paid, 2):
                             order_id.action_pos_order_paid()
@@ -265,17 +276,18 @@ class FoodicsOrderProcess(models.Model):
                                             'price_subtotal_incl': float(adjustment_amount) * -1,
                                         })
                                         order_id._onchange_amount_all()
-                                        order_id.action_pos_order_paid()
-                                        #self._cr.commit()
+                                        try:
+                                            order_id.action_pos_order_paid()
+                                            for history_id in history_res:
+                                                history_id.write({'status': 'done'})
+                                        except Exception as e:
+                                            history_id.write({'status': 'exceptions',
+                                                              'fail_reason': 'unbalanced amounts'})
+                                            self.remove_unmatched_orders(order_id)
                                 else:
-                                    foodic_history_res = self.env['foodics.pos.history'].search(
-                                            [('api_type', '=', 'PoS_Orders'),
-                                             ('status', 'in', ['draft', 'inprocess']),
-                                             ('foodic_order_ref', '=', order_id.foodic_name)])
-                                    for unbalanced_history_id in foodic_history_res:
-                                        unbalanced_history_id.write({'status': 'exceptions',
-                                                                     'fail_reason': 'unbalanced amounts'})
-
+                                    for history_id in history_res:
+                                        history_id.write({'status': 'exceptions',
+                                                          'fail_reason': 'unbalanced amounts'})
                                     self.remove_unmatched_orders(order_id)
 
                 _logger.info("==session status== %s", open_session_id.state)
