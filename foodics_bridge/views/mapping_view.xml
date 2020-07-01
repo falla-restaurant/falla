@@ -318,6 +318,7 @@
                     <group>
                         <group>
                             <field name="branch_id" readonly="1"/>
+                            <field name="branch_name" readonly="1"/>
                             <field name="branch_odoo_id" readonly="1"/>
                             <field name="branch_foodics_id" readonly="1"/>
                             <field name="foodics_created_date" readonly="1"/>

@@ -19,6 +19,7 @@ class FoodicsConfigure(models.Model):
     status_code = fields.Char('Status Code', translate=True)
     token = fields.Text('Token', translate=True)
     amount_adjust = fields.Boolean('Adjustment ?')
+    warehouse_create = fields.Boolean('Auto Warehouse Create ?')
     delivery_product_id = fields.Many2one(
         'product.product', string="Delivery Product")
     adjustment_product_id = fields.Many2one(

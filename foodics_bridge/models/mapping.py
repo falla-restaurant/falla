@@ -101,6 +101,7 @@ class FoodicsBranchMapping(models.Model):
     _rec_name = "branch_foodics_id"
 
     branch_id = fields.Many2one('stock.warehouse', string='Branch')
+    branch_name = fields.Char('Branch name')
     branch_odoo_id = fields.Integer('Branch Odoo Id')
     branch_foodics_id = fields.Char('Branch Foodics Id')
     foodics_created_date = fields.Datetime(
