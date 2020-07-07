@@ -32,9 +32,10 @@ class ProductAttributeInherit(models.Model):
         count = 0
         for record in self.value_ids:
             if record.is_default == True:
-                count = count+1
+                count = count + 1
             if count > 1:
-                raise ValidationError("You can select only one default attribute value")
+                raise ValidationError(
+                    "You can select only one default attribute value")
         return True
 
 
@@ -86,7 +87,8 @@ class FoodicsGetOrder(models.Model):
             headers = {'X-business': business_hid,
                        'Authorization': 'Bearer ' + auth_token}
 
-            response = requests.request("GET", url, headers=headers, data=payload)
+            response = requests.request(
+                "GET", url, headers=headers, data=payload)
 
             if response.status_code == 200:
                 get_data_in_dic = json.loads(response.text)
@@ -94,7 +96,7 @@ class FoodicsGetOrder(models.Model):
                 if order_li:
                     for order_dic in order_li:
                         order_mapping_id = order_mapping_obj.search(
-                                [('order_foodics_id', '=', order_dic['hid'])])
+                            [('order_foodics_id', '=', order_dic['hid'])])
                         if not order_mapping_id:
                             foodics_history_obj.create({
                                 'response': response.text,
@@ -119,8 +121,8 @@ class FoodicsOrderProcess(models.Model):
             if dt.date() < date.today():
                 try:
                     session_id.action_pos_session_closing_control()
-                except:
-                    pass
+                except Exception as e:
+                    _logger.info("Session close fail", e)
 
     def get_pos_customer(self, hid, partner_name, customer_dic):
         customer_mapping_obj = self.env['foodics.customer.mapping']
@@ -139,7 +141,7 @@ class FoodicsOrderProcess(models.Model):
                 'street': customer_dic['address'],
                 #'country_id': country_id.id if country_id else False, # TODO
             })
-            mapping_rec_id = customer_mapping_obj.create({
+            customer_mapping_obj.create({
                 'partner_id': partner_id.id,
                 'partner_odoo_id': partner_id.id,
                 'partner_foodics_id': customer_dic['hid'],
@@ -159,7 +161,8 @@ class FoodicsOrderProcess(models.Model):
         mapping_obj = self.env['foodics.orders.mapping']
 
         if order_id:
-            payment_ids = payment_obj.search([('pos_order_id', '=', order_id.id)])
+            payment_ids = payment_obj.search(
+                [('pos_order_id', '=', order_id.id)])
             for payment_id in payment_ids:
                 payment_id.unlink()
 
@@ -170,129 +173,75 @@ class FoodicsOrderProcess(models.Model):
             line_ids = line_obj.search([('order_id', '=', order_id.id)])
             for line_id in line_ids:
                 line_id.unlink()
-            
+
             order_id.unlink()
+            
+    def check_session_valid(self, business_date, session_id, order_obj, pos_config_id, session_obj):
+        _logger.info("== Called check_session_valid ==")
+        dt = datetime.datetime.strptime(
+            str(session_id.start_at), '%Y-%m-%d %H:%M:%S')
+
+        if str(dt.date()) == str(business_date):
+            return session_id
+        else:
+            pos_orders = order_obj.search(
+                [('session_id', '=', session_id.id)])
+            for order_id in pos_orders:
+                if order_id.state == 'draft':
+                    if round(order_id.amount_total, 2) == round(order_id.amount_paid, 2):
+                        order_id.action_pos_order_paid()
+                    else:
+                        if order_id.amount_total != order_id.amount_paid:
+                            self.check_adjustment_amount(order_id)
+                            
+            _logger.info("==session status== %s", session_id.state)
+            session_id.action_pos_session_closing_control()
+            _logger.info(
+                "==session status after close call== %s", session_id.state)
+
+            session_id = session_obj.create({
+                'user_id': self.env.uid,
+                'config_id': pos_config_id,
+                'start_at': str(business_date),
+            })
+            return session_id
 
     def get_pos_session(self, pos_config_id, business_date):
         # session date should be business date
         _logger.info("Called get_pos_session")
         session_obj = self.env['pos.session']
+        order_obj = self.env['pos.order']
+        
         session_id = session_obj.search([
             ('config_id', '=', pos_config_id),
             ('state', 'in', ('new_session', 'opened'))], limit=1)
-        _logger.info("get_pos_session -> session_id %s config_id %s", session_id, pos_config_id)
+        _logger.info("get_pos_session -> session_id %s config_id %s",
+                     session_id, pos_config_id)
         if session_id:
-            dt = datetime.datetime.strptime(
-                str(session_id.start_at), '%Y-%m-%d %H:%M:%S')
-
-            if str(dt.date()) == str(business_date):
-                return session_id
-            else:
-                pos_orders = self.env['pos.order'].search([('session_id', '=', session_id.id)])
-                for order_id in pos_orders:
-                    history_res = self.env['foodics.pos.history'].search(
-                                                [('api_type', '=', 'PoS_Orders'),
-                                                 ('status', 'in', ['draft', 'inprocess']),
-                                                 ('foodic_order_ref', '=', order_id.foodic_name)])
-                    if order_id.state == 'draft':
-                        if round(order_id.amount_total, 2) == round(order_id.amount_paid, 2):
-                            order_id.action_pos_order_paid()
-                            #self._cr.commit()
-                        else:
-                            if order_id.amount_total != order_id.amount_paid:
-                                adjustment_amount = order_id.amount_total - order_id.amount_paid
-                                if adjustment_amount < 1 and adjustment_amount > -1:
-                                    configuration_obj = self.env[
-                                        'foodics.configuration'].search([], limit=1)
-                                    adjustment_product_id = configuration_obj.adjustment_product_id
-                                    if adjustment_product_id:
-                                        new_line = order_id.lines.create({
-                                            'order_id': order_id.id,
-                                            'product_id': adjustment_product_id.id,
-                                            'qty': 1,
-                                            'price_unit': float(adjustment_amount) * -1,
-                                            'price_subtotal': float(adjustment_amount) * -1,
-                                            'price_subtotal_incl': float(adjustment_amount) * -1,
-                                        })
-                                        order_id._onchange_amount_all()
-                                        try:
-                                            order_id.action_pos_order_paid()
-                                            for history_id in history_res:
-                                                history_id.write({'status': 'done'})
-                                        except Exception as e:
-                                            history_id.write({'status': 'exceptions',
-                                                              'fail_reason': 'unbalanced amounts'})
-                                            self.remove_unmatched_orders(order_id)
-
-                                else:
-                                    for history_id in history_res:
-                                        history_id.write({'status': 'exceptions',
-                                                          'fail_reason': 'unbalanced amounts'})
-                                    self.remove_unmatched_orders(order_id)
-                                    
-                                    
-
-                _logger.info("==session status== %s", session_id.state)
-                session_id.action_pos_session_closing_control()
-                _logger.info("==session status after close call== %s", session_id.state)
-
-                session_id = session_obj.create({
-                    'user_id': self.env.uid,
-                    'config_id': pos_config_id,
-                    'start_at': str(business_date),
-                })
-                return session_id
+            session_id = self.check_session_valid(business_date, session_id, order_obj, pos_config_id, session_obj)
+            return session_id
         else:
             # check if any session open for this user and conf - close if any
             open_session_res = session_obj.search([('user_id', '=', self.env.uid),
-                                                  ('config_id', '=', pos_config_id),
-                                                  ('state', 'in', ['opened', 'closing_control'])])
+                                                   ('config_id', '=',
+                                                    pos_config_id),
+                                                   ('state', 'in', ['opened', 'closing_control'])])
             _logger.info("== open_session_res == %s", open_session_res)
             for open_session_id in open_session_res:
-                pos_orders = self.env['pos.order'].search([('session_id', '=', open_session_id.id)])
+                pos_orders = order_obj.search(
+                    [('session_id', '=', open_session_id.id)])
                 for order_id in pos_orders:
-                    history_res = self.env['foodics.pos.history'].search(
-                                                [('api_type', '=', 'PoS_Orders'),
-                                                 ('status', 'in', ['draft', 'inprocess']),
-                                                 ('foodic_order_ref', '=', order_id.foodic_name)])
                     if order_id.state == 'draft':
                         if round(order_id.amount_total, 2) == round(order_id.amount_paid, 2):
                             order_id.action_pos_order_paid()
-                            #self._cr.commit()
                         else:
                             if order_id.amount_total != order_id.amount_paid:
-                                adjustment_amount = order_id.amount_total - order_id.amount_paid
-                                if adjustment_amount < 1 and adjustment_amount > -1:
-                                    configuration_obj = self.env[
-                                        'foodics.configuration'].search([], limit=1)
-                                    adjustment_product_id = configuration_obj.adjustment_product_id
-                                    if adjustment_product_id:
-                                        new_line = order_id.lines.create({
-                                            'order_id': order_id.id,
-                                            'product_id': adjustment_product_id.id,
-                                            'qty': 1,
-                                            'price_unit': float(adjustment_amount) * -1,
-                                            'price_subtotal': float(adjustment_amount) * -1,
-                                            'price_subtotal_incl': float(adjustment_amount) * -1,
-                                        })
-                                        order_id._onchange_amount_all()
-                                        try:
-                                            order_id.action_pos_order_paid()
-                                            for history_id in history_res:
-                                                history_id.write({'status': 'done'})
-                                        except Exception as e:
-                                            history_id.write({'status': 'exceptions',
-                                                              'fail_reason': 'unbalanced amounts'})
-                                            self.remove_unmatched_orders(order_id)
-                                else:
-                                    for history_id in history_res:
-                                        history_id.write({'status': 'exceptions',
-                                                          'fail_reason': 'unbalanced amounts'})
-                                    self.remove_unmatched_orders(order_id)
+                                self.check_adjustment_amount(order_id)
 
                 _logger.info("==session status== %s", open_session_id.state)
                 open_session_id.action_pos_session_closing_control()
-                _logger.info("==session status after close call== %s", open_session_id.state)
+                _logger.info(
+                    "==session status after close call== %s", open_session_id.state)
 
             session_id = session_obj.create({
                 'user_id': self.env.uid,
@@ -301,214 +250,402 @@ class FoodicsOrderProcess(models.Model):
             })
             _logger.info("== New created session id -> %s", session_id)
             return session_id
+        
+    def create_delivery_line(self, product_obj, order_dic):
+        _logger.info("== Called create_delivery_line")
+        order_line_dic = {
+            'qty': 1,
+            'price_unit': order_dic['delivery_price'],
+            'price_subtotal': order_dic['delivery_price'],
+            'price_subtotal_incl': order_dic['delivery_price'],
+        }
+        configuration_obj = self.env[
+                'foodics.configuration'].search([], limit=1)
+        delivery_product_id = configuration_obj.delivery_product_id
+        if delivery_product_id:
+            if not delivery_product_id.taxes_id:
+                tax_id = configuration_obj.excluded_taxes_id
+                delivery_product_id.product_tmpl_id.write(
+                    {'taxes_id': [(6, 0, [tax_id.id])]})
 
+            order_line_dic['product_id'] = delivery_product_id.id
+        else:
+            product_id = product_obj.search(
+                [('name', '=', 'Delivery charges')], limit=1)
+            configuration_obj.write({'delivery_product_id': product_id.id})
+            if product_id:
+                if not product_id.taxes_id:
+                    tax_id = configuration_obj.excluded_taxes_id
+                    product_id.product_tmpl_id.write(
+                        {'taxes_id': [(6, 0, [tax_id.id])]})
+
+                order_line_dic['product_id'] = product_id.id
+        return order_line_dic
+    
+    def create_discount_line(self, product_obj, order_dic):
+        _logger.info("== Called create_discount_line")
+        order_line_dic = {
+            'qty': 1,
+            'price_unit': order_dic['discount_amount'] * -1,
+            'price_subtotal': order_dic['discount_amount'] * -1,
+            'price_subtotal_incl': order_dic['discount_amount'] * -1,
+        }
+        configuration_obj = self.env[
+                'foodics.configuration'].search([], limit=1)
+        discount_product_id = configuration_obj.discount_product_id
+        if discount_product_id:
+            if not discount_product_id.taxes_id:
+                tax_id = configuration_obj.excluded_taxes_id
+                discount_product_id.product_tmpl_id.write(
+                    {'taxes_id': [(6, 0, [tax_id.id])]})
+
+            order_line_dic['product_id'] = discount_product_id.id
+        else:
+            product_id = product_obj.search(
+                [('name', '=', 'Discount')], limit=1)
+            if not product_id:
+                product_id = product_obj.create({
+                    'name': 'Discount',
+                    'type': 'service',
+                    'categ_id': 1,
+                })
+            if product_id:
+                configuration_obj.write(
+                    {'discount_product_id': product_id.id})
+                if not product_id.taxes_id:
+                    tax_id = configuration_obj.excluded_taxes_id
+                    product_id.product_tmpl_id.write(
+                        {'taxes_id': [(6, 0, [tax_id.id])]})
+
+                order_line_dic['product_id'] = product_id.id
+        return order_line_dic
+    
+    def create_line_for_no_option(self, pro_map_id, line_data, product_obj):
+        _logger.info("== Called create_line_for_no_option")
+        order_line_dic = {
+            'qty': line_data['quantity'],
+            'price_unit': line_data['displayable_original_price'],
+            'price_subtotal': line_data['final_price'],
+            'price_subtotal_incl': line_data['displayable_final_price'],
+        }
+        product_pro_ids = product_obj.search(
+            [('product_tmpl_id', '=', pro_map_id.product_id.id)])
+        product_id = 0
+        for product_pro_id in product_pro_ids:
+            for attribute in product_pro_id.product_template_attribute_value_ids:
+                product_id = product_pro_id.id
+                if not attribute.product_attribute_value_id.is_default:
+                    product_id = 0
+                    break
+            if product_id:
+                break
+        if product_id:
+            order_line_dic['product_id'] = product_id
+        else:
+            order_line_dic['product_id'] = product_pro_ids[0].id
+        return order_line_dic
+    
+    def create_line_for_modifiers(self, pro_map_id, line_data, product_obj):
+        _logger.info("== Called create_line_for_modifiers")
+        
+        item_ids = []
+        modifier_ids = []
+        addon_total = 0.0
+        for oprtion_data in line_data['options']:
+
+            if oprtion_data['relationship_data']:
+                addon_qty = oprtion_data['relationship_data']['quantity']
+                addon_amount = round(oprtion_data['relationship_data']['original_price'], 3) * addon_qty
+                addon_total = float(addon_total) + float(addon_amount)
+
+            modifier_option_id = self.env['modifier.value'].search(
+                [('option_foodics_id', '=', oprtion_data['hid'])])
+            if modifier_option_id:
+                modifier_ids.append(
+                    modifier_option_id.modifier_id.product_id.id)
+                for items in modifier_option_id.modifier_id.product_id.value_ids:
+                    if items.name == modifier_option_id.name:
+                        item_ids.append(items.id)
+
+        if addon_total > 0:
+            addon_total_incl = (
+                addon_total / 10) / 2 + addon_total
+        else:
+            addon_total_incl = 0
+            
+        order_line_dic = {
+            'qty': line_data['quantity'],
+            'price_unit': line_data['displayable_original_price'] + addon_total_incl,
+            'price_subtotal': line_data['final_price'],
+            'price_subtotal_incl': line_data['displayable_final_price'],
+        }
+
+        product_pro_ids = product_obj.search(
+                [('product_tmpl_id', '=', pro_map_id.product_id.id)])
+        if pro_map_id.product_id.attribute_line_ids:
+            for tmp_attribute_line_id in pro_map_id.product_id.attribute_line_ids:
+                if tmp_attribute_line_id.attribute_id.id not in modifier_ids:
+                    value_id = self.env['product.attribute.value'].search(
+                        [('is_default', '=', True),
+                         ('attribute_id', '=', tmp_attribute_line_id.attribute_id.id)], limit=1)
+                    item_ids.append(value_id.id)
+            item_ids.sort()
+            
+            product_id = 0
+            for product_pro_id in product_pro_ids:
+                keys = []
+                for attribute in product_pro_id.product_template_attribute_value_ids:
+                    product_id = product_pro_id.id
+                    keys.append(
+                        attribute.product_attribute_value_id.id)
+                    keys.sort()
+                    if keys != item_ids:
+                        product_id = 0
+                        break
+                if product_id:
+                    break
+            if product_id:
+                order_line_dic['product_id'] = product_id
+            else:
+                order_line_dic['product_id'] = product_pro_ids[0].id
+        else:
+            order_line_dic['product_id'] = product_pro_ids[0].id
+        return order_line_dic
+        
     def get_order_line(self, order_dic):
+        _logger.info("== Called get_order_line")
+        product_obj = self.env['product.product']
         order_line_list = []
         # Create order Line
         for line_data in order_dic['products']:
             if not line_data['void_reason']:
                 pro_map_id = self.env['foodics.product.mapping'].search([
                     ('product_foodics_id', '=', line_data['product_hid'])])
-                _logger.info("== Product Mapping ID %s %s", pro_map_id, line_data['product_hid'])
+                _logger.info("== Product Mapping ID %s %s",
+                             pro_map_id, line_data['product_hid'])
                 if pro_map_id:
                     if pro_map_id.product_id.active == False:
-                       pro_map_id.product_id.write({'active': True}) 
+                        pro_map_id.product_id.write({'active': True})
                     if not line_data['options']:
-                        if not pro_map_id.product_id.attribute_line_ids:
-                            product_pro_id  = self.env['product.product'].search(
-                                                [('product_tmpl_id', '=', pro_map_id.product_id.id)], limit=1)
-                            order_line_list.append((0, 0, {
-                                'product_id': product_pro_id.id,
-                                #'product_uom_id': product_pro_id.uom_id.id,
-                                'qty': line_data['quantity'],
-                                'price_unit': line_data['displayable_original_price'],
-                                'price_subtotal': line_data['final_price'],
-                                'price_subtotal_incl': line_data['displayable_final_price'],
-                            }))
-                        else:
-                            product_pro_ids = self.env['product.product'].search(
-                                                [('product_tmpl_id', '=', pro_map_id.product_id.id)])
-                            keys = []
-                            default_product = 0
-                            for product_pro_id in product_pro_ids:
-                                if keys and False not in keys:
-                                    default_product = default_pro_variant_id.id
-                                    break
-                                keys.clear()
-                                for attribute in product_pro_id.product_template_attribute_value_ids:
-                                    default_pro_variant_id = product_pro_id
-                                    keys.append(attribute.product_attribute_value_id.is_default)
-                            if default_product > 0:
-                                order_line_list.append((0, 0, {
-                                    'product_id': default_product,
-                                    #'product_uom_id': product_pro_ids[0].uom_id.id,
-                                    'qty': line_data['quantity'],
-                                    'price_unit': line_data['displayable_original_price'],
-                                    'price_subtotal': line_data['final_price'],
-                                    'price_subtotal_incl': line_data['displayable_final_price'],
-                                }))
-                            else:
-                                # This case Need to be dicuss
-                                order_line_list.append((0, 0, {
-                                    'product_id': product_pro_ids[0].id,
-                                    #'product_uom_id': product_pro_ids[0].uom_id.id,
-                                    'qty': line_data['quantity'],
-                                    'price_unit': line_data['displayable_original_price'],
-                                    'price_subtotal': line_data['final_price'],
-                                    'price_subtotal_incl': line_data['displayable_final_price'],
-                                }))
-                    # if we have modifier in options
+                        order_line_dic = self.create_line_for_no_option(pro_map_id, line_data, product_obj)
+                        order_line_list.append((0, 0, order_line_dic))
                     else:
-                        item_ids = []
-                        modifier_ids = []
-                        addon_total = 0.0
-                        for oprtion_data in line_data['options']:
-
-                            if oprtion_data['relationship_data']:
-                                addon_qty = oprtion_data['relationship_data']['quantity']
-                                addon_amount = round(oprtion_data['relationship_data']['original_price'], 3) * addon_qty
-                                addon_total = addon_total + float(addon_amount)
-
-                            modifier_option_id = self.env['modifier.value'].search(
-                                            [('option_foodics_id', '=', oprtion_data['hid'])])
-                            if modifier_option_id:
-                                modifier_ids.append(modifier_option_id.modifier_id.product_id.id)
-                                for items in modifier_option_id.modifier_id.product_id.value_ids:
-                                    if items.name == modifier_option_id.name:
-                                        item_ids.append(items.id)
-
-                        if addon_total > 0:
-                            addon_total_incl = (addon_total/10)/2 + addon_total
-                        else:
-                            addon_total_incl = 0
-
-                        if pro_map_id.product_id.attribute_line_ids:
-                            for tmp_attribute_line_id in pro_map_id.product_id.attribute_line_ids:
-                                if tmp_attribute_line_id.attribute_id.id not in modifier_ids:
-                                    value_id = self.env['product.attribute.value'].search(
-                                                        [('is_default', '=', True),
-                                                         ('attribute_id', '=', tmp_attribute_line_id.attribute_id.id)], limit=1)
-                                    item_ids.append(value_id.id)
-
-                            item_ids.sort()
-                            product_pro_ids = self.env['product.product'].search(
-                                                    [('product_tmpl_id', '=', pro_map_id.product_id.id)])
-                            keys = []
-                            true_keys = []
-                            default_product = 0
-                            for product_pro_id in product_pro_ids:
-                                keys.sort()
-                                if keys and item_ids == keys:
-                                    default_product = default_pro_variant_id.id
-                                    break
-
-                                if true_keys and False not in true_keys:
-                                    default_product = default_pro_variant_id.id
-
-                                keys.clear()
-                                true_keys.clear()
-                                for attribute in product_pro_id.product_template_attribute_value_ids:
-                                    default_pro_variant_id = product_pro_id
-                                    keys.append(attribute.product_attribute_value_id.id)
-                                    true_keys.append(attribute.product_attribute_value_id.is_default)
-
-                            if default_product > 0:
-                                order_line_list.append((0, 0, {
-                                    'product_id': default_product,
-                                    #'product_uom_id': product_pro_ids[0].uom_id.id,
-                                    'qty': line_data['quantity'],
-                                    'price_unit': line_data['displayable_original_price'] + addon_total_incl,
-                                    'price_subtotal': line_data['final_price'],
-                                    'price_subtotal_incl': line_data['displayable_final_price'],
-                                }))
-                        else:
-                            product_pro_id  = self.env['product.product'].search(
-                                                [('product_tmpl_id', '=', pro_map_id.product_id.id)], limit=1)
-                            order_line_list.append((0, 0, {
-                                'product_id': product_pro_id.id,
-                                #'product_uom_id': product_pro_id.uom_id.id,
-                                'qty': line_data['quantity'],
-                                'price_unit': line_data['displayable_original_price'] + addon_total_incl,
-                                'price_subtotal': line_data['final_price'],
-                                'price_subtotal_incl': line_data['displayable_final_price'],
-                            }))
-
+                        # if we have modifier in options
+                        order_line_dic = self.create_line_for_modifiers(pro_map_id, line_data, product_obj)
+                        order_line_list.append((0, 0, order_line_dic))
+                        
         # Create delivery product Line
         if order_dic['delivery_price'] > 0:
-            configuration_obj = self.env[
-                'foodics.configuration'].search([], limit=1)
-            delivery_product_id = configuration_obj.delivery_product_id
-            if delivery_product_id:
-                if not delivery_product_id.taxes_id:
-                    tax_id = configuration_obj.excluded_taxes_id
-                    delivery_product_id.product_tmpl_id.write({'taxes_id':[(6,0,[tax_id.id])]})
-
-                order_line_list.append((0, 0, {
-                    'product_id': delivery_product_id.id,
-                    #'product_uom_id': delivery_product_id.uom_id.id,
-                    'qty': 1,
-                    'price_unit': order_dic['delivery_price'],
-                    'price_subtotal': order_dic['delivery_price'],
-                    'price_subtotal_incl': order_dic['delivery_price'],
-                }))
-            else:
-                product_id = self.env['product.product'].search([('name', '=', 'Delivery charges')], limit=1)
-                configuration_obj.write({'delivery_product_id': product_id.id})
-                if product_id:
-                    if not product_id.taxes_id:
-                        tax_id = configuration_obj.excluded_taxes_id
-                        product_id.product_tmpl_id.write({'taxes_id':[(6,0,[tax_id.id])]})
-
-                    order_line_list.append((0, 0, {
-                        'product_id': product_id.id,
-                        #'product_uom_id': product_id.uom_id.id,
-                        'qty': 1,
-                        'price_unit': order_dic['delivery_price'],
-                        'price_subtotal': order_dic['delivery_price'],
-                        'price_subtotal_incl': order_dic['delivery_price'],
-                    }))
+            order_line_dic = self.create_delivery_line(product_obj, order_dic)
+            order_line_list.append((0, 0, order_line_dic))
+            
         # Create discount product line
         if order_dic['discount_amount'] > 0:
-            configuration_obj = self.env[
-                'foodics.configuration'].search([], limit=1)
-            discount_product_id = configuration_obj.discount_product_id
-            if discount_product_id:
-                if not discount_product_id.taxes_id:
-                    tax_id = configuration_obj.excluded_taxes_id
-                    discount_product_id.product_tmpl_id.write({'taxes_id':[(6,0,[tax_id.id])]})
-
-                order_line_list.append((0, 0, {
-                    'product_id': discount_product_id.id,
-                    #'product_uom_id': discount_product_id.uom_id.id,
-                    'qty': 1,
-                    'price_unit': order_dic['discount_amount'] * -1,
-                    'price_subtotal': order_dic['discount_amount'] * -1,
-                    'price_subtotal_incl': order_dic['discount_amount'] * -1,
-                }))
-            else:
-                product_id = self.env['product.product'].search([('name', '=', 'Discount')], limit=1)
-                if not product_id:
-                    product_id = product_obj.create({
-                        'name': 'Discount',
-                        'type': 'service',
-                        'categ_id': 1,
-                    })
-                if product_id:
-                    configuration_obj.write({'discount_product_id': product_id.id})
-                    if not product_id.taxes_id:
-                        tax_id = configuration_obj.excluded_taxes_id
-                        product_id.product_tmpl_id.write({'taxes_id':[(6,0,[tax_id.id])]})
-
-                    order_line_list.append((0, 0, {
-                        'product_id': product_id.id,
-                        #'product_uom_id': product_id.uom_id.id,
-                        'qty': 1,
-                        'price_unit': order_dic['discount_amount'] * -1,
-                        'price_subtotal': order_dic['discount_amount'] * -1,
-                        'price_subtotal_incl': order_dic['discount_amount'] * -1,
-                    }))
+            order_line_dic = self.create_discount_line(product_obj, order_dic)
+            order_line_list.append((0, 0, order_line_dic))
 
         return order_line_list
+
+    def process_foodic_order(self, order_dic):
+        foodic_pos_history_obj = self.env['foodics.pos.history']
+
+        foodic_order_res = foodic_pos_history_obj.search(
+            [('api_type', '=', 'PoS_Orders'),
+             ('foodic_order_ref', '=', order_dic['reference'])])
+
+        _logger.info("== Called process_foodic_order %s %s",
+                     foodic_order_res, order_dic['reference'])
+        
+        if not foodic_order_res:
+            foo_pos_order_res = foodic_pos_history_obj.create({
+                'api_type': 'PoS_Orders',
+                'response': json.dumps(order_dic),
+                'status': 'draft',
+                'foodic_order_ref': order_dic['reference'],
+            })
+            foo_pos_order_res.write({'status': 'inprocess'})
+            # Call check_order_valid
+            self.check_order_valid(foo_pos_order_res, order_dic)
+        else:
+            if foodic_order_res.status == 'draft':
+                self.check_order_valid(foodic_order_res, order_dic)
+                
+    def check_branch(self, foo_pos_order_res, order_dic):
+        _logger.info("== Called check_branch ==")
+        branch_mapping_id = self.env['foodics.branch.mapping'].search([
+            ('branch_foodics_id', '=', order_dic['branch']['hid'])])
+        if branch_mapping_id:
+            picking_type_id = self.env['stock.picking.type'].search([
+                ('name', '=', 'PoS Orders'),
+                ('warehouse_id', '=', branch_mapping_id.branch_id.id)], limit=1)
+            pos_config_id = self.env['pos.config'].search([
+                ('picking_type_id', '=', picking_type_id.id)], limit=1)
+
+            # PoS session search or create
+            session_id = self.get_pos_session(
+                pos_config_id.id, order_dic['business_date'])
+            return session_id
+        else:
+            foo_pos_order_res.write({'status': 'exceptions',
+                                     'fail_reason': 'Amount tolal and amount paid are different.'})
+
+    def check_customer(self, order_dic):
+        _logger.info("== Called check_customer ==")
+        partner_id = False
+        if order_dic['customer']:
+            hid = order_dic['customer']['hid']
+            partner_name = order_dic['customer']['name']
+            customer_dic = order_dic['customer']
+            partner_id = self.get_pos_customer(
+                hid, partner_name, customer_dic)
+        return partner_id
+    
+    def check_payment(self, order_dic):
+        _logger.info("== Called check_payment ==")
+        payment_list = []
+        if order_dic['payments']:
+            for payment_data in order_dic['payments']:
+                payment_mapping_id = self.env['foodics.payment.method.mapping'].search([
+                    ('payment_foodics_id', '=', payment_data['payment_method']['hid'])])
+                if payment_mapping_id:
+                    payment_list.append((0, 0, {
+                        'amount': payment_data['amount'],
+                        'payment_date': payment_data['actual_date'],
+                        'payment_method_id': payment_mapping_id.payment_id.id,
+                    }))
+        return payment_list
+    
+    def process_line_onchanges(self, order_id):
+        _logger.info("== Called process_line_onchanges ==")
+        for line_id in order_id.lines:
+            line_qty = line_id.qty
+            line_price_unit = line_id.price_unit
+            line_price_subtotal = line_id.price_subtotal
+            line_price_subtotal_incl = line_id.price_subtotal_incl
+
+            line_id._onchange_product_id()
+            line_id.write({
+                'qty': line_qty,
+                'price_unit': line_price_unit,
+                'price_subtotal': line_price_subtotal,
+                'price_subtotal_incl': line_price_subtotal_incl,
+            })
+            line_id._onchange_amount_line_all()
+
+            if line_id.price_subtotal_incl != line_price_subtotal_incl:
+                line_id.write({"price_subtotal_incl": line_price_subtotal_incl})
+                
+    def check_adjustment_amount(self, order_id):
+        _logger.info("== Called check_adjustment_amount ==")
+        history_res = self.env['foodics.pos.history'].search(
+                        [('api_type', '=', 'PoS_Orders'),
+                         ('status', 'in', [
+                             'draft', 'inprocess']),
+                         ('foodic_order_ref', '=', order_id.foodic_name)])
+        adjustment_amount = order_id.amount_total - order_id.amount_paid
+        if adjustment_amount < 1 and adjustment_amount > -1:
+            configuration_obj = self.env[
+                'foodics.configuration'].search([], limit=1)
+            adjustment_product_id = configuration_obj.adjustment_product_id
+            if adjustment_product_id:
+                order_id.lines.create({
+                    'order_id': order_id.id,
+                    'product_id': adjustment_product_id.id,
+                    'qty': 1,
+                    'price_unit': float(adjustment_amount) * -1,
+                    'price_subtotal': float(adjustment_amount) * -1,
+                    'price_subtotal_incl': float(adjustment_amount) * -1,
+                })
+                order_id._onchange_amount_all()
+                try:
+                    order_id.action_pos_order_paid()
+                    for history_id in history_res:
+                        history_id.write(
+                            {'status': 'done'})
+                    #foo_pos_order_res.write({'status': 'done'})
+                except Exception as e:
+                    #for history_id in history_res:
+                    history_id.write({'status': 'exceptions',
+                                        'fail_reason': str(e)})
+        else:
+            self.remove_unmatched_orders(order_id)
+            for history_id in history_res:
+                history_id.write({'status': 'exceptions',
+                                  'fail_reason': 'Amount tolal and amount paid are different.'})
+            # foo_pos_order_res.write({'status': 'exceptions',
+            #                          'fail_reason': 'Amount tolal and amount paid are different.'})
+        
+    def create_mapping_record(self, order_id, order_dic):
+        self.env['foodics.orders.mapping'].create({
+            'order_id': order_id.id,
+            'order_odoo_id': order_id.id,
+            'order_foodics_id': order_dic['hid'],
+            'foodics_created_date': order_dic['created_at'],
+            'foodics_update_date': order_dic['updated_at'],
+        })
+            
+    def check_order_valid(self, foo_pos_order_res, order_dic):
+        pos_order_obj = self.env['pos.order']
+        order_mapping_obj = self.env['foodics.orders.mapping']
+        # if order_dic['reference'] == 'QNWTB03C012711600001':
+        if 'reference' in order_dic and order_dic['status'] == 4:
+            order_id = pos_order_obj.search(
+                [('foodic_name', '=', order_dic['reference'])])
+            if not order_id:
+                # Search Branch
+                session_id = self.check_branch(foo_pos_order_res, order_dic)
+
+                # Search or Create Customer
+                partner_id = self.check_customer(order_dic)
+                
+                # Search or Create Payment Method
+                payment_list = self.check_payment(order_dic)
+
+                # Add Order lines
+                order_lines = self.get_order_line(order_dic)
+
+                # Create Order
+                order_id = pos_order_obj.create({
+                    'foodic_name': order_dic['reference'],
+                    'session_id': session_id.id,
+                    'partner_id': partner_id.id if partner_id else False,
+                    'note': order_dic['notes'],
+                    'date_order': str(order_dic['created_at']),
+                    'lines': order_lines,
+                    'payment_ids': payment_list,
+                    'amount_tax': 1,
+                    'amount_total': 1,
+                    'amount_paid': 1,
+                    'amount_return': 1,
+                })
+                # Update line data
+                self.process_line_onchanges(order_id)
+                
+                # Call Order Onchanges
+                order_id._onchange_amount_all()
+                
+                # Adjustment for unbalanced amount
+                if order_id.amount_total != order_id.amount_paid:
+                    self.check_adjustment_amount(order_id)
+                else:
+                    try:
+                        order_id.action_pos_order_paid()
+                        foo_pos_order_res.write({'status': 'done'})
+                        # Create mapping record for order
+                        self.create_mapping_record(order_id, order_dic)
+                        
+                    except Exception as e:
+                        foo_pos_order_res.write({'status': 'exceptions',
+                                                 'fail_reason': str(e)})
+            else:
+                order_mapping_id = order_mapping_obj.search(
+                    [('order_id', '=', order_id.id)])
+                if not order_mapping_id:
+                    self.create_mapping_record(order_id, order_dic)
+                foo_pos_order_res.write({'status': 'done'})
+        else:
+            foo_pos_order_res.write({'status': 'exceptions',
+                                     'fail_reason': 'No data or some order status is not done'})
 
     def process_orders(self, history_obj, data):
         '''
@@ -671,170 +808,13 @@ class FoodicsOrderProcess(models.Model):
         '''
 
         history_obj.write({'status': 'inprocess'})
-        pos_order_obj = self.env['pos.order']
-        pos_order_line_obj = self.env['pos.order.line']
-        order_mapping_obj = self.env['foodics.orders.mapping']
-        foodic_pos_history_obj = self.env['foodics.pos.history']
         get_data_in_dic = json.loads(data)
         order_li = get_data_in_dic['orders']
 
         if order_li:
             for order_dic in order_li:
-
-                foodic_order_res = foodic_pos_history_obj.search(
-                        [('api_type', '=', 'PoS_Orders'),
-                         ('foodic_order_ref', '=', order_dic['reference'])])
-                
-                if not foodic_order_res:
-                    foo_pos_order_res = foodic_pos_history_obj.create({
-                        'api_type': 'PoS_Orders',
-                        'response': json.dumps(order_dic),
-                        'status': 'draft',
-                    })
-
-
-                    if 'reference' in order_dic and order_dic['status'] == 4:
-                    #if order_dic['reference'] == 'QNWTB03C012711600001':
-                        order_id = pos_order_obj.search(
-                            [('foodic_name', '=', order_dic['reference'])])
-                        _logger.info("== order ref in process == %s", order_dic['reference'])
-                        if not order_id:
-                            # Search Branch
-                            branch_mapping_id = self.env['foodics.branch.mapping'].search([
-                                ('branch_foodics_id', '=', order_dic['branch']['hid'])])
-                            if branch_mapping_id:
-                                picking_type_id = self.env['stock.picking.type'].search([
-                                    ('name', '=', 'PoS Orders'),
-                                    ('warehouse_id', '=', branch_mapping_id.branch_id.id)], limit=1)
-                                pos_config_id = self.env['pos.config'].search([
-                                    ('picking_type_id', '=', picking_type_id.id)], limit=1)
-
-                                # PoS session search or create
-                                session_id = self.get_pos_session(
-                                    pos_config_id.id, order_dic['business_date'])
-
-                            # Search or Create Customer
-                            if order_dic['customer']:
-                                hid = order_dic['customer']['hid']
-                                partner_name = order_dic['customer']['name']
-                                customer_dic = order_dic['customer']
-                                partner_id = self.get_pos_customer(
-                                    hid, partner_name, customer_dic)
-                            else:
-                                partner_id = False
-
-                            # Search or Create Payment Method
-                            amount_paid = 0
-                            payment_list = []
-                            if order_dic['payments']:
-                                for payment_data in order_dic['payments']:
-                                    payment_mapping_id = self.env['foodics.payment.method.mapping'].search([
-                                        ('payment_foodics_id', '=', payment_data['payment_method']['hid'])])
-                                    if payment_mapping_id:
-                                        amount_paid = payment_data['amount']
-                                        payment_list.append((0, 0, {
-                                            'amount': payment_data['amount'],
-                                            'payment_date': payment_data['actual_date'],
-                                            'payment_method_id': payment_mapping_id.payment_id.id,
-                                        }))
-
-                            # Add Order lines
-                            order_lines = self.get_order_line(order_dic)
-
-                            # Create Order
-                            order_id = pos_order_obj.create({
-                                'foodic_name': order_dic['reference'],
-                                'session_id': session_id.id,
-                                'partner_id': partner_id.id if partner_id else False,
-                                'note': order_dic['notes'],
-                                'date_order': str(order_dic['created_at']),
-                                'lines': order_lines,
-                                'payment_ids': payment_list,
-                                'amount_tax': 1,
-                                'amount_total': 1,
-                                'amount_paid': 1,
-                                'amount_return': 1,
-                            })
-                            # Update line data
-                            for line_id in order_id.lines:
-                                line_qty = line_id.qty
-                                line_price_unit = line_id.price_unit
-                                line_price_subtotal = line_id.price_subtotal
-                                line_price_subtotal_incl = line_id.price_subtotal_incl
-
-                                line_id._onchange_product_id()
-                                line_id.write({
-                                    'qty': line_qty,
-                                    'price_unit': line_price_unit,
-                                    'price_subtotal': line_price_subtotal,
-                                    'price_subtotal_incl': line_price_subtotal_incl,
-                                })
-                                line_id._onchange_amount_line_all()
-
-                                if line_id.price_subtotal_incl != line_price_subtotal_incl:
-                                    line_id.write({"price_subtotal_incl": line_price_subtotal_incl})
-
-                            order_id._onchange_amount_all()
-                            # Adjustment for unbalanced amount
-                            if order_id.amount_total != order_id.amount_paid:
-                                adjustment_amount = order_id.amount_total - order_id.amount_paid
-                                if adjustment_amount < 1 and adjustment_amount > -1:
-                                    configuration_obj = self.env[
-                                        'foodics.configuration'].search([], limit=1)
-                                    adjustment_product_id = configuration_obj.adjustment_product_id
-                                    if adjustment_product_id:
-                                        new_line = order_id.lines.create({
-                                            'order_id': order_id.id,
-                                            'product_id': adjustment_product_id.id,
-                                            'qty': 1,
-                                            'price_unit': float(adjustment_amount) * -1,
-                                            'price_subtotal': float(adjustment_amount) * -1,
-                                            'price_subtotal_incl': float(adjustment_amount) * -1,
-                                        })
-                                        order_id._onchange_amount_all()
-                                        try:
-                                            order_id.action_pos_order_paid()
-                                            foo_pos_order_res.write({'status': 'done'})
-                                        except Exception as e:
-                                            foo_pos_order_res.write({'status': 'exceptions',
-                                                                     'fail_reason': str(e)})
-                                else:
-                                    self.remove_unmatched_orders(order_id)
-                                    foo_pos_order_res.write({'status': 'exceptions',
-                                                             'fail_reason': 'unbalanced amounts'})
-                            else:
-                                try:
-                                    order_id.action_pos_order_paid()
-                                    foo_pos_order_res.write({'status': 'done'})
-                                    # Create mapping record for order
-                                    mapping_rec_id = order_mapping_obj.create({
-                                        'order_id': order_id.id,
-                                        'order_odoo_id': order_id.id,
-                                        'order_foodics_id': order_dic['hid'],
-                                        'foodics_created_date': order_dic['created_at'],
-                                        'foodics_update_date': order_dic['updated_at'],
-                                    })
-                                    history_obj.write({'status': 'done'})
-                                    #self._cr.commit()
-                                except Exception as e:
-                                    foo_pos_order_res.write({'status': 'exceptions',
-                                                             'fail_reason': str(e)})
-
-                        else:
-                            order_mapping_id = order_mapping_obj.search(
-                                [('order_id', '=', order_id.id)])
-                            if not order_mapping_id:
-                                mapping_rec_id = order_mapping_obj.create({
-                                    'order_id': order_id.id,
-                                    'order_odoo_id': order_id.id,
-                                    'order_foodics_id': order_dic['hid'],
-                                    'foodics_created_date': order_dic['created_at'],
-                                    'foodics_update_date': order_dic['updated_at'],
-                                })
-                            history_obj.write({'status': 'done'})
-                    else:
-                        history_obj.write({'status': 'exceptions',
-                                           'fail_reason': 'No data or some order status is not done'})
+                self.process_foodic_order(order_dic)
+            history_obj.write({'status': 'done'})
         else:
             history_obj.write({'status': 'exceptions',
                                'fail_reason': 'No data to process'})

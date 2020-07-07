@@ -84,3 +84,7 @@ class FoodicsPosHistory(models.Model):
             order_obj.process_orders(self, self.response)
         elif self.api_type == 'Modifiers':
             modifier_obj.process_modifier(self, self.response)
+            
+    def action_process_order(self):
+        order_obj = self.env['foodics.order.process']
+        order_obj.process_foodic_order(json.loads(self.response))

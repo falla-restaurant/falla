@@ -106,13 +106,18 @@
         <field name="arch" type="xml">
             <form string="History">
                 <header>
-                    <button name="action_process" type="object" string="Process" class="btn-primary"/>
+                    <button name="action_process" type="object" string="Process" class="btn-primary"
+                            attrs="{'invisible':[('api_type','==','PoS_Orders')]}"/>
+                    <button name="action_process_order" type="object" string="Process" class="btn-primary"
+                            attrs="{'invisible':[('api_type','!=','PoS_Orders')]}"/>
                     <field name="status" widget="statusbar" statusbar_visible="draft,inprocess,exceptions,done"/>
                 </header>
                 <sheet>
                     <group>
                         <group>
                             <field name="api_type" required="1"/>
+                            <field name="foodic_order_ref" 
+                                attrs="{'invisible':[('api_type','!=','PoS_Orders')]}"/>
                             <field name="create_date"/>
                         </group>
                         <group>

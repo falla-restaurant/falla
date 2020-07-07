@@ -15,7 +15,6 @@ class ProductTemplateInherit(models.Model):
     foodid_id = fields.Char(string='Hid')
 
 
-
 class FoodicsGetProduct(models.Model):
     _name = "foodics.get.product"
     _inherit = ['mail.thread', 'mail.activity.mixin', 'image.mixin']
@@ -60,25 +59,49 @@ class FoodicsCategoryProduct(models.Model):
     _name = "foodics.product.process"
 
     def get_product_tax(self, product_dic, name):
+        tax_id = False
+
+        if name == "Delivery charges" or name == "Discount":
+            configuration_obj = self.env[
+                'foodics.configuration'].search([], limit=1)
+            tax_id = configuration_obj.excluded_taxes_id
+        else:
+            configuration_obj = self.env[
+                'foodics.configuration'].search([], limit=1)
+            tax_id = configuration_obj.included_taxes_id
+
+        if tax_id:
+            return tax_id.id
+        # Improvement TODO
+        else:
             tax_id = False
-
-            if name == "Delivery charges" or name == "Discount":
-                configuration_obj = self.env['foodics.configuration'].search([], limit=1)
-                tax_id = configuration_obj.excluded_taxes_id
+            return tax_id
+        
+    def create_mapping_record(self, product_id, product_dic):
+        product_mapping_obj = self.env['foodics.product.mapping']
+        product_mapping_obj.create({
+            'product_id': product_id.id,
+            'product_odoo_id': product_id.id,
+            'product_foodics_id': product_dic['hid'],
+            'sku': product_dic['sku'],
+            'foodics_created_date': product_dic['created_at'],
+            'foodics_update_date': product_dic['updated_at'],
+        })
+        
+    def check_mapping_record(self, product_id, product_dic, product_mapping_obj):
+        product_mapping_res = product_mapping_obj.search(
+            [('product_id', '=', product_id.id)])
+        if not product_mapping_res:
+            product_mapping_id = product_mapping_obj.search(
+                [('product_foodics_id', '=', product_dic['hid'])])
+            if product_mapping_id:
+                product_mapping_id.write(
+                    {'product_id': product_id.id})
             else:
-                configuration_obj = self.env['foodics.configuration'].search([], limit=1)
-                tax_id = configuration_obj.included_taxes_id
-
-            if tax_id:
-                return tax_id.id
-            # Improvement TODO
-            else:
-                tax_id = False
-                return tax_id
+                self.create_mapping_record(product_id, product_dic)
 
     def process_products(self, history_obj, data):
         '''
-        Improvement TODO
         {
           "products": [
             {
@@ -137,7 +160,7 @@ class FoodicsCategoryProduct(models.Model):
                 }
               ],
               "sizes": [
-                
+
               ],
               "timed_events": [
 
@@ -160,45 +183,27 @@ class FoodicsCategoryProduct(models.Model):
                     # Product create or select
                     product_en_name = product_dic['name']['en']
                     # Tax create or select
+                    tax_id = False
                     if product_dic['taxable'] == True:
-                        tax_id = self.get_product_tax(product_dic, product_en_name)
-                    else:
-                        tax_id = False
-                    # product_id = product_obj.search(
-                    #     [('name', '=', product_en_name),
-                    #      ('foodid_id', '=', product_dic['hid']),
-                    #      ('active', '=', True)])
-
-                    # if not product_id:
-                    #     product_id = product_obj.search(
-                    #         [('name', '=', product_en_name),
-                    #          ('available_in_pos', '=', True),
-                    #          ('active', '=', True)], limit=1)
-                    #     if product_id:
-                    #         product_id.write({'foodid_id': product_dic['hid']})
+                        tax_id = self.get_product_tax(
+                            product_dic, product_en_name)
 
                     product_id = False
                     product_mapping_id = product_mapping_obj.search(
-                                [('product_foodics_id', '=', product_dic['hid']),
-                                 ('product_id', '!=', False)])
+                        [('product_foodics_id', '=', product_dic['hid']),
+                         ('product_id', '!=', False)])
                     if product_mapping_id:
                         product_id = product_mapping_id[0].product_id
                     if not product_id:
-                        #if product_en_name == "DAMAAR":
+                        description = ''
                         if product_dic['description']:
                             description = product_dic['description']['en']
-                        else:
-                            description = ''
 
                         barcode = product_dic['barcode']
-
+                        category_id = False
                         if product_dic['category']:
                             category_id = self.env['foodics.category.mapping'].search([
                                 ('category_foodics_id', '=', product_dic['category']['hid'])])
-                            if not category_id:
-                                category_id = False
-                        else:
-                            category_id = False
 
                         # Create Product
                         product_id = product_obj.create({
@@ -210,77 +215,50 @@ class FoodicsCategoryProduct(models.Model):
                             'categ_id': category_id.category_id.id if category_id else 1,
                         })
                         if tax_id:
-                            product_id.write({'taxes_id':[(6,0,[tax_id])]})
-                        else:
-                            product_id.write({'taxes_id': False})
+                            product_id.write({'taxes_id': [(6, 0, [tax_id])]})
 
                         # Create mapping record
-                        mapping_rec_id = product_mapping_obj.create({
-                            'product_id': product_id.id,
-                            'product_odoo_id': product_id.id,
-                            'product_foodics_id': product_dic['hid'],
-                            'sku': product_dic['sku'],
-                            'foodics_created_date': product_dic['created_at'],
-                            'foodics_update_date': product_dic['updated_at'],
-                        })
+                        self.create_mapping_record(product_id, product_dic)
                         history_obj.write({'status': 'done'})
-                        #self._cr.commit()
                     else:
-                        product_mapping_res = product_mapping_obj.search(
-                            [('product_id', '=', product_id.id)])
-                        if not product_mapping_res:
-                            product_mapping_id = product_mapping_obj.search(
-                                [('product_foodics_id', '=', product_dic['hid'])])
-                            if product_mapping_id:
-                                product_mapping_id.write({'product_id': product_id.id})
-                            else:
-                                mapping_rec_id = product_mapping_obj.create({
-                                    'product_id': product_id.id,
-                                    'product_odoo_id': product_id.id,
-                                    'product_foodics_id': product_dic['hid'],
-                                    'sku': product_dic['sku'],
-                                    'foodics_created_date': product_dic['created_at'],
-                                    'foodics_update_date': product_dic['updated_at'],
-                                })
+                        self.check_mapping_record(product_id, product_dic, product_mapping_obj)
                         history_obj.write({'status': 'done'})
 
                     # Create modifiers
-                    if product_id.name == 'MONALISA CHICKEN':
-                        variant_obj = self.env['product.template.attribute.line']
-                        if product_dic['modifiers']:
-                            for modifiers_data in product_dic['modifiers']:
-                                if modifiers_data['relationship_data']:
-                                    modifier_mapping_id = self.env['foodics.modifier.mapping'].search(
-                                            [('modifier_foodics_id', '=', modifiers_data['hid'])])
-                                    if modifier_mapping_id:
-                                        excluded_options_li = []
-                                        value_list = []
-                                        for excluded_hid in modifiers_data['relationship_data']['excluded_options']:
-                                            excluded_options_li.append(excluded_hid)
+                    # variant_obj = self.env['product.template.attribute.line']
+                    # if product_dic['modifiers']:
+                    #     for modifiers_data in product_dic['modifiers']:
+                    #         if modifiers_data['relationship_data']:
+                    #             modifier_mapping_id = self.env['foodics.modifier.mapping'].search(
+                    #                 [('modifier_foodics_id', '=', modifiers_data['hid'])])
+                    #             if modifier_mapping_id:
+                    #                 excluded_options_li = []
+                    #                 value_list = []
+                    #                 for excluded_hid in modifiers_data['relationship_data']['excluded_options']:
+                    #                     excluded_options_li.append(excluded_hid)
 
-                                        for option_values in modifier_mapping_id.value_ids:
-                                            if option_values.option_foodics_id not in excluded_options_li:
-                                                value_id = self.env['product.attribute.value'].search(
-                                                    [('name', '=', option_values.name),
-                                                     ('attribute_id', '=', modifier_mapping_id.product_id.id)], limit=1)
-                                                value_list.append(value_id.id)
-                                        for value_data in modifier_mapping_id.product_id.value_ids:
-                                            if value_data.is_default:
-                                                if value_data.id not in value_list:
-                                                    value_list.append(value_data.id)
+                    #                 for option_values in modifier_mapping_id.value_ids:
+                    #                     if option_values.option_foodics_id not in excluded_options_li:
+                    #                         value_id = self.env['product.attribute.value'].search(
+                    #                             [('name', '=', option_values.name),
+                    #                                 ('attribute_id', '=', modifier_mapping_id.product_id.id)], limit=1)
+                    #                         value_list.append(value_id.id)
+                    #                 for value_data in modifier_mapping_id.product_id.value_ids:
+                    #                     if value_data.is_default:
+                    #                         if value_data.id not in value_list:
+                    #                             value_list.append(value_data.id)
 
+                    #                 variant_id = variant_obj.search(
+                    #                     [('attribute_id', '=', modifier_mapping_id.product_id.id),
+                    #                         ('product_tmpl_id', '=', product_id.id)])
 
-                                        variant_id = variant_obj.search(
-                                            [('attribute_id', '=', modifier_mapping_id.product_id.id),
-                                             ('product_tmpl_id', '=', product_id.id)])
-
-                                        if not variant_id:
-                                            variant_id = variant_obj.create({
-                                                'attribute_id': modifier_mapping_id.product_id.id,
-                                                'value_ids': [(6, 0, value_list)],
-                                                'product_tmpl_id': product_id.id,
-                                            })
-                                            #self._cr.commit()
+                    #                 if not variant_id:
+                    #                     variant_obj.create({
+                    #                         'attribute_id': modifier_mapping_id.product_id.id,
+                    #                         'value_ids': [(6, 0, value_list)],
+                    #                         'product_tmpl_id': product_id.id,
+                    #                     })
+                                        # self._cr.commit()
                 else:
                     history_obj.write({'status': 'exceptions'})
         else:
