@@ -411,7 +411,7 @@ class FoodicsOrderProcess(models.Model):
         else:
             order_line_dic['product_id'] = product_pro_ids[0].id
         return order_line_dic
-        
+    
     def get_order_line(self, order_dic):
         _logger.info("== Called get_order_line")
         product_obj = self.env['product.product']
@@ -421,8 +421,15 @@ class FoodicsOrderProcess(models.Model):
             if not line_data['void_reason']:
                 pro_map_id = self.env['foodics.product.mapping'].search([
                     ('product_foodics_id', '=', line_data['product_hid'])])
-                _logger.info("== Product Mapping ID %s %s",
-                             pro_map_id, line_data['product_hid'])
+                _logger.info("== Product Mapping ID %s %s", pro_map_id, line_data['product_hid'])
+                
+                if not pro_map_id:
+                    self.env['foodics.get.product'].get_product()
+                    self.env['foodics.pos.history']._call_action_process()
+                    
+                pro_map_id = self.env['foodics.product.mapping'].search([
+                    ('product_foodics_id', '=', line_data['product_hid'])])
+                    
                 if pro_map_id:
                     if pro_map_id.product_id.active == False:
                         pro_map_id.product_id.write({'active': True})
@@ -463,17 +470,18 @@ class FoodicsOrderProcess(models.Model):
                 'status': 'draft',
                 'foodic_order_ref': order_dic['reference'],
             })
+            _logger.info("== Create PoS_Orders record %s", foo_pos_order_res)
             foo_pos_order_res.write({'status': 'inprocess'})
             # Call check_order_valid
             self.check_order_valid(foo_pos_order_res, order_dic)
         else:
-            if foodic_order_res.status == 'draft':
+            if foodic_order_res.status in ('draft','exceptions'):
                 self.check_order_valid(foodic_order_res, order_dic)
                 
     def check_branch(self, foo_pos_order_res, order_dic):
-        _logger.info("== Called check_branch ==")
         branch_mapping_id = self.env['foodics.branch.mapping'].search([
             ('branch_foodics_id', '=', order_dic['branch']['hid'])])
+        _logger.info("== Called check_branch == %s", branch_mapping_id)
         if branch_mapping_id:
             picking_type_id = self.env['stock.picking.type'].search([
                 ('name', '=', 'PoS Orders'),

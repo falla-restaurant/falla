@@ -22,7 +22,6 @@ class FoodicsPosHistory(models.Model):
     _description = "Foodics POS History"
     _rec_name = "api_type"
 
-    # url = fields.Char('URL', translate=True)
     fail_reason = fields.Text('Reason', translate=True)
     response = fields.Text('Response', translate=True)
     api_type = fields.Selection([
@@ -54,6 +53,12 @@ class FoodicsPosHistory(models.Model):
         for process_data in history_data:
             _logger.info("=== Runing process data === %s", process_data)
             process_data.sudo().action_process()
+            
+        pos_order_data = self.search([('api_type', '=', 'PoS_Orders'),
+                                       ('status', 'in', ['draft','exceptions'])], limit=4)
+        for process_data in pos_order_data:
+            _logger.info("==# Runing PoS Order process data #== %s", process_data)
+            process_data.sudo().action_process_order()
 
     def action_process(self):
         branch_obj = self.env['foodics.branch.process']
