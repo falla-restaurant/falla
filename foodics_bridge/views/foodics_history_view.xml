@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- PoS Order Form/Tree inherit -->
+    <record id="foodics_pos_order_tree_inherit_view" model="ir.ui.view">
+        <field name="name">pos_order_tree.inherit.view</field>
+        <field name="model">pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_order_tree" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="foodic_name"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="foodics_pos_order_inherit_view" model="ir.ui.view">
+        <field name="name">pos.order.inherit.view</field>
+        <field name="model">pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_pos_form" />
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="foodic_name"/>
+            </field>
+            <!-- <xpath expr="//field[@name='lines']/tree//field[@name='product_id']" position="after">
+                <field name="addons"/>
+            </xpath>
+            <xpath expr="//field[@name='lines']/form//field[@name='notice']" position="after">
+                <field name="addons"/>
+            </xpath> -->
+        </field>
+    </record>
+
+    <record id="product_attribute_inherit_view" model="ir.ui.view">
+        <field name="name">product.attribute.inherit.view</field>
+        <field name="model">product.attribute</field>
+        <field name="inherit_id" ref="product.product_attribute_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='value_ids']/tree//field[@name='name']" position="after">
+                <field name="is_default"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_pos_order_filter_inherit_search" model="ir.ui.view">
+      <field name="name">pos.order.search.expand.filter</field>
+      <field name="model">pos.order</field>
+      <field name="inherit_id" ref="point_of_sale.view_pos_order_filter"/>
+      <field name="arch" type="xml">
+            <xpath expr="//field[@name='pos_reference']" position="after">
+                <field name="foodic_name"/>
+            </xpath>
+      </field>
+    </record>
+
+    <!-- Customer form inherit -->
+
+    <record id="foodics_res_partner_inherit_view" model="ir.ui.view">
+        <field name="name">res.partner.inherit.view</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <field name="vat" position="before">
+                <field name="latitude"/>
+                <field name="longitude"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Inherit product.template -->
+    <record id="product_template_form_inherit_change_string" model="ir.ui.view">
+        <field name="name">product.template.form.inherit</field>
+        <field name="model">product.template</field>
+        <field name="type">form</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='default_code']" position="after">
+                <field name="foodid_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- History menu -->
+    <menuitem id="menu_foodics_history"
+        name="History"
+        parent="foodics_menu_root"
+        sequence="4"/>
+
+    <!-- Foodics POS History Configuration View -->
+    <record id="foodics_pos_history_tree_view" model="ir.ui.view">
+        <field name="name">foodics.pos.history.tree</field>
+        <field name="model">foodics.pos.history</field>
+        <field name="arch" type="xml">
+            <tree string="History">
+                <field name="api_type"/>
+                <field name="create_date"/>
+                <field name="status"/>
+                <field name="status_code"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="foodics_pos_history_form_view" model="ir.ui.view">
+        <field name="name">foodics.pos.history.form</field>
+        <field name="model">foodics.pos.history</field>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form string="History">
+                <header>
+                    <button name="action_process" type="object" string="Process" class="btn-primary"
+                            attrs="{'invisible':[('api_type','==','PoS_Orders')]}"/>
+                    <button name="action_process_order" type="object" string="Process" class="btn-primary"
+                            attrs="{'invisible':[('api_type','!=','PoS_Orders')]}"/>
+                    <field name="status" widget="statusbar" statusbar_visible="draft,inprocess,exceptions,done"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="api_type" required="1"/>
+                            <field name="foodic_order_ref" 
+                                attrs="{'invisible':[('api_type','!=','PoS_Orders')]}"/>
+                            <field name="create_date"/>
+                        </group>
+                        <group>
+                            <field name="status_code"/>
+                            <field name="fail_reason" attrs="{'invisible':[('status','!=','exceptions')]}"/>
+                        </group>
+                        <field name="response"/>
+                    </group>
+
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_crm_pos_history_filter" model="ir.ui.view">
+        <field name="name">foodics.pos.history.search.history</field>
+        <field name="model">foodics.pos.history</field>
+        <field name="arch" type="xml">
+            <search string="History Information">
+                <field name="status"/>
+                <field name="api_type"/>
+                <group expand="0" string="Group By">
+                    <filter name="status" string="Status" domain="[]" context="{'group_by':'status'}"/>
+                    <filter name="api_type" context="{'group_by': 'api_type'}" string="Type"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="foodics_pos_history_action" model="ir.actions.act_window">
+        <field name="name">Foodics History</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">foodics.pos.history</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="foodics_pos_history_tree_view"/>
+        <field name="search_view_id" ref="view_crm_pos_history_filter"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new product
+            </p><p>
+                You must define a product for everything you sell or purchase,
+                whether it's a storable product, a consumable or a service.
+            </p>
+        </field>
+    </record>
+
+    <menuitem action="foodics_pos_history_action" id="menu_foodics_pos_history" parent="menu_foodics_history" sequence="0"/>
+
+</odoo>

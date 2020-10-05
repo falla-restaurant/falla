@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding='UTF-8'?>
+<odoo>
+
+	<record id="pos_customer_cron" model="ir.cron">
+        <field name="name">Foodic Fetch Customer</field>
+        <field name="model_id" ref="model_foodics_get_customer"/>
+        <field name="state">code</field>
+        <field name="code">model._call_get_customer()</field>
+        <field name="interval_number">10</field>
+        <field name="interval_type">minutes</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="True"/>
+        <field name="doall" eval="True"/>
+    </record>
+
+    <record id="pos_sale_order_cron" model="ir.cron">
+        <field name="name">Foodic Fetch PoS Order</field>
+        <field name="model_id" ref="model_foodics_get_order"/>
+        <field name="state">code</field>
+        <field name="code">model._call_get_order()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="True"/>
+        <field name="doall" eval="True"/>
+    </record>
+
+    <record id="pos_branch_cron" model="ir.cron">
+        <field name="name">Foodic Fetch Branch</field>
+        <field name="model_id" ref="model_foodics_get_branch"/>
+        <field name="state">code</field>
+        <field name="code">model._call_get_branch()</field>
+        <field name="interval_number">8</field>
+        <field name="interval_type">hours</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="False"/>
+        <field name="doall" eval="False"/>
+    </record>
+
+    <record id="pos_category_cron" model="ir.cron">
+        <field name="name">Foodic Fetch Category</field>
+        <field name="model_id" ref="model_foodics_get_category"/>
+        <field name="state">code</field>
+        <field name="code">model._call_get_category()</field>
+        <field name="interval_number">8</field>
+        <field name="interval_type">hours</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="False"/>
+        <field name="doall" eval="False"/>
+    </record>
+
+    <record id="process_pos_session_cron" model="ir.cron">
+        <field name="name">Foodic Process Open PoS Sessions</field>
+        <field name="model_id" ref="model_foodics_order_process"/>
+        <field name="state">code</field>
+        <field name="code">model._call_process_pos_sessions()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="True"/>
+        <field name="doall" eval="True"/>
+    </record>
+
+    <record id="pos_action_process_cron" model="ir.cron">
+        <field name="name">Foodic Process data from history</field>
+        <field name="model_id" ref="model_foodics_pos_history"/>
+        <field name="state">code</field>
+        <field name="code">model._call_action_process()</field>
+        <field name="interval_number">2</field>
+        <field name="interval_type">minutes</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="True"/>
+        <field name="doall" eval="True"/>
+    </record>
+
+</odoo>
