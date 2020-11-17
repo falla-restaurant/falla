@@ -60,8 +60,7 @@ class FoodicsPosHistory(models.Model):
                 self._cr.commit()
                 process_data.sudo().action_process()
             else:
-                process_data.write({'status': 'exceptions',
-                                    'fail_reason': 'Session is not closed due to some reconcile entries'})
+                process_data.write({'status': 'exceptions'})
             
         pos_order_data = self.search([('api_type', '=', 'PoS_Orders'),
                                        ('status', 'in', ['draft','exceptions'])], limit=4)
