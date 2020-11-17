@@ -130,8 +130,7 @@ class FoodicsOrderProcess(models.Model):
 						line_rec.price_unit = round(line_rec.price_unit, 2)
 						line_rec.price_subtotal = round(line_rec.price_subtotal, 2)
 						line_rec.price_subtotal_incl = round(line_rec.price_subtotal_incl, 2)
-					order_rec.amount_total = round(order_rec.amount_total, 2)
-					order_rec.amount_paid = round(order_rec.amount_paid, 2)
+					order_rec._onchange_amount_all()
 			except:
 				pass
 
@@ -211,11 +210,22 @@ class FoodicsOrderProcess(models.Model):
 				[('session_id', '=', session_id.id)])
 			for order_id in pos_orders:
 				if order_id.state == 'draft':
-					if round(order_id.amount_total, 2) == round(order_id.amount_paid, 2):
+					# if round(order_id.amount_total, 2) == round(order_id.amount_paid, 2):
+
+					for line_rec in order_id.lines:
+						line_rec.qty = round(line_rec.qty, 2)
+						line_rec.price_unit = round(line_rec.price_unit, 2)
+						line_rec.price_subtotal = round(line_rec.price_subtotal, 2)
+						line_rec.price_subtotal_incl = round(line_rec.price_subtotal_incl, 2)
+
+					try:
 						order_id.action_pos_order_paid()
-					else:
-						if order_id.amount_total != order_id.amount_paid:
-							self.check_adjustment_amount(order_id)
+					except:
+						try:
+							if order_id.amount_total != order_id.amount_paid:
+								self.check_adjustment_amount(order_id)
+						except:
+							pass
 							
 			self.action_close_session(session_id)
 
@@ -252,11 +262,22 @@ class FoodicsOrderProcess(models.Model):
 					[('session_id', '=', open_session_id.id)])
 				for order_id in pos_orders:
 					if order_id.state == 'draft':
-						if round(order_id.amount_total, 2) == round(order_id.amount_paid, 2):
+						# if round(order_id.amount_total, 2) == round(order_id.amount_paid, 2):
+
+						for line_rec in order_id.lines:
+							line_rec.qty = round(line_rec.qty, 2)
+							line_rec.price_unit = round(line_rec.price_unit, 2)
+							line_rec.price_subtotal = round(line_rec.price_subtotal, 2)
+							line_rec.price_subtotal_incl = round(line_rec.price_subtotal_incl, 2)
+
+						try:
 							order_id.action_pos_order_paid()
-						else:
-							if order_id.amount_total != order_id.amount_paid:
-								self.check_adjustment_amount(order_id)
+						except:
+							try:
+								if order_id.amount_total != order_id.amount_paid:
+									self.check_adjustment_amount(order_id)
+							except:
+								pass
 
 				self.action_close_session(open_session_id)
 
@@ -354,7 +375,7 @@ class FoodicsOrderProcess(models.Model):
 		order_line_dic = {
 			'qty': line_data['quantity'],
 			'price_unit': round(line_data['displayable_original_price'], 2),
-			'price_subtotal': round(line_data['final_price'], 2),
+			'price_subtotal': line_data['final_price'],
 			'price_subtotal_incl': round(line_data['displayable_final_price'], 2),
 		}
 		product_pro_ids = product_obj.search(
@@ -601,6 +622,13 @@ class FoodicsOrderProcess(models.Model):
 					'price_subtotal': round((float(adjustment_amount) * -1), 2),
 					'price_subtotal_incl': round((float(adjustment_amount) * -1), 2)
 				})
+
+				for line_rec in order_id.lines:
+					line_rec.qty = round(line_rec.qty, 2)
+					line_rec.price_unit = round(line_rec.price_unit, 2)
+					line_rec.price_subtotal = round(line_rec.price_subtotal, 2)
+					line_rec.price_subtotal_incl = round(line_rec.price_subtotal_incl, 2)
+
 				order_id._onchange_amount_all()
 				try:
 					order_id.action_pos_order_paid()
@@ -665,31 +693,47 @@ class FoodicsOrderProcess(models.Model):
 					'lines': order_lines,
 					'payment_ids': payment_list,
 					'amount_tax': 1,
-					'amount_total': 1,
-					'amount_paid': 1,
-					'amount_return': 1,
+					'amount_total': round(1, 2),
+					'amount_paid': round(1, 2),
+					'amount_return': round(1, 2),
 				})
 				# Update line data
 				self.process_line_onchanges(order_id)
 				
+				for line_rec in order_id.lines:
+					line_rec.qty = round(line_rec.qty, 2)
+					line_rec.price_unit = round(line_rec.price_unit, 2)
+					line_rec.price_subtotal = round(line_rec.price_subtotal, 2)
+					line_rec.price_subtotal_incl = round(line_rec.price_subtotal_incl, 2)
+
 				# Call Order Onchanges
 				order_id._onchange_amount_all()
 				
-				# Adjustment for unbalanced amount
-				if order_id.amount_total != order_id.amount_paid:
-					self.check_adjustment_amount(order_id)
-				else:
+				try:
+					order_id.action_pos_order_paid()
+					foo_pos_order_res.write({'status': 'done'})
+					# Create mapping record for order
+					self.create_mapping_record(order_id, order_dic)
+					
+				except Exception as e:
 					try:
-						order_id.action_pos_order_paid()
+						# Adjustment for unbalanced amount
+						if order_id.amount_total != order_id.amount_paid:
+							self.check_adjustment_amount(order_id)
 						foo_pos_order_res.write({'status': 'done'})
 						# Create mapping record for order
 						self.create_mapping_record(order_id, order_dic)
-						
-					except Exception as e:
+					except:
 						foo_pos_order_res.write({'status': 'exceptions',
-												 'fail_reason': str(e)})
+													'fail_reason': str(e)})
 			else:
 				if order_id.state == 'draft':
+					for line_rec in order_id.lines:
+						line_rec.qty = round(line_rec.qty, 2)
+						line_rec.price_unit = round(line_rec.price_unit, 2)
+						line_rec.price_subtotal = round(line_rec.price_subtotal, 2)
+						line_rec.price_subtotal_incl = round(line_rec.price_subtotal_incl, 2)
+
 					order_id.action_pos_order_paid()
 				order_mapping_id = order_mapping_obj.search(
 					[('order_id', '=', order_id.id)])

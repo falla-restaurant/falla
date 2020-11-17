@@ -44,6 +44,7 @@ class FoodicsPosHistory(models.Model):
         ('exceptions', 'Exceptions'),
         ('done', 'Done'),
     ], string='Status', default='draft')
+    counter = fields.Integer('Attempts')
 
     def _call_action_process(self):
         """ Called by cron job"""
@@ -52,7 +53,15 @@ class FoodicsPosHistory(models.Model):
         _logger.info("History data being process through cron %s", history_data)
         for process_data in history_data:
             _logger.info("=== Runing process data === %s", process_data)
-            process_data.sudo().action_process()
+            counter = process_data.counter
+            if counter <= 2:
+                counter = counter + 1
+                process_data.write({'counter': counter})
+                self._cr.commit()
+                process_data.sudo().action_process()
+            else:
+                process_data.write({'status': 'exceptions',
+                                    'fail_reason': 'Session is not closed due to some reconcile entries'})
             
         pos_order_data = self.search([('api_type', '=', 'PoS_Orders'),
                                        ('status', 'in', ['draft','exceptions'])], limit=4)
