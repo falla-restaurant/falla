@@ -68,6 +68,22 @@ class FoodicsPosHistory(models.Model):
             _logger.info("==# Runing PoS Order process data #== %s", process_data)
             process_data.sudo().action_process_order()
 
+    def _call_action_process_exception(self):
+        """ _call_action_process_exception Called by cron job"""
+        history_data = self.search([('api_type', '=', 'Orders'),
+                                    ('status', '=', 'exceptions')], limit=4)
+        _logger.info("Exceptions History data being process through cron %s", history_data)
+        for process_data in history_data:
+            _logger.info("=== Runing Exceptions process data === %s", process_data)
+            counter = process_data.counter
+            if counter <= 4:
+                counter = counter + 1
+                process_data.write({'counter': counter})
+                self._cr.commit()
+                process_data.sudo().action_process()
+            else:
+                process_data.write({'status': 'exceptions'})
+
     def action_process(self):
         branch_obj = self.env['foodics.branch.process']
         category_obj = self.env['foodics.category.process']

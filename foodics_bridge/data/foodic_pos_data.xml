@@ -73,4 +73,16 @@
         <field name="doall" eval="False"/>
     </record>
 
+    <record id="pos_process_exception_order_cron" model="ir.cron">
+        <field name="name">Foodic Process Exception's orders from history</field>
+        <field name="model_id" ref="model_foodics_pos_history"/>
+        <field name="state">code</field>
+        <field name="code">model._call_action_process_exception()</field>
+        <field name="interval_number">5</field>
+        <field name="interval_type">minutes</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="True"/>
+        <field name="doall" eval="False"/>
+    </record>
+
 </odoo>
