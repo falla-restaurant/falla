@@ -16,3 +16,4 @@ from . import floor_location
 from . import payment_method
 from . import user
 from . import api_configuration
+from . import pos_session
