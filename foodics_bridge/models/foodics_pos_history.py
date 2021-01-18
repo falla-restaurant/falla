@@ -71,7 +71,7 @@ class FoodicsPosHistory(models.Model):
     def _call_action_process_exception(self):
         """ _call_action_process_exception Called by cron job"""
         history_data = self.search([('api_type', '=', 'Orders'),
-                                    ('status', '=', 'exceptions')], limit=4)
+                                    ('status', '=', 'exceptions'),('counter', '!=', 5)], limit=5)
         _logger.info("Exceptions History data being process through cron %s", history_data)
         for process_data in history_data:
             _logger.info("=== Runing Exceptions process data === %s", process_data)
