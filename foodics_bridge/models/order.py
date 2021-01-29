@@ -143,8 +143,8 @@ class FoodicsOrderProcess(models.Model):
 				str(session_id.start_at), '%Y-%m-%d %H:%M:%S')
 			if dt.date() < date.today():
 				self.action_close_session(session_id)
-				
-					
+
+
 
 	def get_pos_customer(self, hid, partner_name, customer_dic):
 		customer_mapping_obj = self.env['foodics.customer.mapping']
@@ -181,8 +181,9 @@ class FoodicsOrderProcess(models.Model):
 		line_obj = self.env['pos.order.line']
 		payment_obj = self.env['pos.payment']
 		mapping_obj = self.env['foodics.orders.mapping']
-
-		if order_id:
+		string_match = ['yes','Yes','YES','True','true','y']
+		config_parameter_obj = self.env['ir.config_parameter'].sudo().get_param('unmatch_records')
+		if config_parameter_obj in string_match and order_id:
 			payment_ids = payment_obj.search(
 				[('pos_order_id', '=', order_id.id)])
 			for payment_id in payment_ids:
@@ -197,7 +198,7 @@ class FoodicsOrderProcess(models.Model):
 				line_id.unlink()
 
 			order_id.unlink()
-			
+
 	def check_session_valid(self, business_date, session_id, order_obj, pos_config_id, session_obj):
 		_logger.info("== Called check_session_valid ==")
 		dt = datetime.datetime.strptime(
@@ -226,7 +227,7 @@ class FoodicsOrderProcess(models.Model):
 								self.check_adjustment_amount(order_id)
 						except:
 							pass
-							
+
 			self.action_close_session(session_id)
 
 			session_id = session_obj.create({
@@ -241,7 +242,7 @@ class FoodicsOrderProcess(models.Model):
 		_logger.info("Called get_pos_session")
 		session_obj = self.env['pos.session']
 		order_obj = self.env['pos.order']
-		
+
 		session_id = session_obj.search([
 			('config_id', '=', pos_config_id),
 			('state', 'in', ('new_session', 'opened'))], limit=1)
@@ -288,7 +289,7 @@ class FoodicsOrderProcess(models.Model):
 			})
 			_logger.info("== New created session id -> %s", session_id)
 			return session_id
-		
+
 	def create_delivery_line(self, product_obj, order_dic):
 		_logger.info("== Called create_delivery_line")
 		order_line_dic = {
@@ -325,7 +326,7 @@ class FoodicsOrderProcess(models.Model):
 
 				order_line_dic['product_id'] = product_id.id
 		return order_line_dic
-	
+
 	def create_discount_line(self, product_obj, order_dic):
 		_logger.info("== Called create_discount_line")
 		order_line_dic = {
@@ -369,7 +370,7 @@ class FoodicsOrderProcess(models.Model):
 
 				order_line_dic['product_id'] = product_id.id
 		return order_line_dic
-	
+
 	def create_line_for_no_option(self, pro_map_id, line_data, product_obj):
 		_logger.info("== Called create_line_for_no_option")
 		order_line_dic = {
@@ -394,10 +395,10 @@ class FoodicsOrderProcess(models.Model):
 		else:
 			order_line_dic['product_id'] = product_pro_ids[0].id
 		return order_line_dic
-	
+
 	def create_line_for_modifiers(self, pro_map_id, line_data, product_obj):
 		_logger.info("== Called create_line_for_modifiers")
-		
+
 		item_ids = []
 		modifier_ids = []
 		addon_total = 0.0
@@ -422,7 +423,7 @@ class FoodicsOrderProcess(models.Model):
 				addon_total / 10) / 2 + addon_total
 		else:
 			addon_total_incl = 0
-			
+
 		order_line_dic = {
 			'qty': line_data['quantity'],
 			'price_unit': round((line_data['displayable_original_price'] + addon_total_incl), 2),
@@ -440,7 +441,7 @@ class FoodicsOrderProcess(models.Model):
 						 ('attribute_id', '=', tmp_attribute_line_id.attribute_id.id)], limit=1)
 					item_ids.append(value_id.id)
 			item_ids.sort()
-			
+
 			product_id = 0
 			for product_pro_id in product_pro_ids:
 				keys = []
@@ -461,7 +462,7 @@ class FoodicsOrderProcess(models.Model):
 		else:
 			order_line_dic['product_id'] = product_pro_ids[0].id
 		return order_line_dic
-	
+
 	def get_order_line(self, order_dic):
 		_logger.info("== Called get_order_line")
 		product_obj = self.env['product.product']
@@ -472,14 +473,14 @@ class FoodicsOrderProcess(models.Model):
 				pro_map_id = self.env['foodics.product.mapping'].search([
 					('product_foodics_id', '=', line_data['product_hid'])])
 				_logger.info("== Product Mapping ID %s %s", pro_map_id, line_data['product_hid'])
-				
+
 				if not pro_map_id:
 					self.env['foodics.get.product'].get_product()
 					self.env['foodics.pos.history']._call_action_process()
-					
+
 				pro_map_id = self.env['foodics.product.mapping'].search([
 					('product_foodics_id', '=', line_data['product_hid'])])
-					
+
 				if pro_map_id:
 					if pro_map_id.product_id.active == False:
 						pro_map_id.product_id.write({'active': True})
@@ -490,12 +491,12 @@ class FoodicsOrderProcess(models.Model):
 						# if we have modifier in options
 						order_line_dic = self.create_line_for_modifiers(pro_map_id, line_data, product_obj)
 						order_line_list.append((0, 0, order_line_dic))
-						
+
 		# Create delivery product Line
 		if order_dic['delivery_price'] > 0:
 			order_line_dic = self.create_delivery_line(product_obj, order_dic)
 			order_line_list.append((0, 0, order_line_dic))
-			
+
 		# Create discount product line
 		if order_dic['discount_amount'] > 0:
 			order_line_dic = self.create_discount_line(product_obj, order_dic)
@@ -512,7 +513,7 @@ class FoodicsOrderProcess(models.Model):
 
 		_logger.info("= Called process_foodic_order %s %s",
 					 foodic_order_res, order_dic['reference'])
-		
+
 		if not foodic_order_res:
 			foo_pos_order_res = foodic_pos_history_obj.create({
 				'api_type': 'PoS_Orders',
@@ -527,7 +528,7 @@ class FoodicsOrderProcess(models.Model):
 		else:
 			if foodic_order_res.status in ('draft','exceptions', 'inprocess'):
 				self.check_order_valid(foodic_order_res, order_dic)
-				
+
 	def check_branch(self, foo_pos_order_res, order_dic):
 		branch_mapping_id = self.env['foodics.branch.mapping'].search([
 			('branch_foodics_id', '=', order_dic['branch']['hid'])])
@@ -563,7 +564,7 @@ class FoodicsOrderProcess(models.Model):
 			partner_id = self.get_pos_customer(
 				hid, partner_name, customer_dic)
 		return partner_id
-	
+
 	def check_payment(self, order_dic, session_id):
 		_logger.info("== Called check_payment == ")
 		payment_list = []
@@ -580,7 +581,7 @@ class FoodicsOrderProcess(models.Model):
 								'payment_method_id': payment_method_name.id,
 							}))
 		return payment_list
-	
+
 	def process_line_onchanges(self, order_id):
 		_logger.info("== Called process_line_onchanges ==")
 		for line_id in order_id.lines:
@@ -600,7 +601,7 @@ class FoodicsOrderProcess(models.Model):
 
 			if line_id.price_subtotal_incl != line_price_subtotal_incl:
 				line_id.write({"price_subtotal_incl": line_price_subtotal_incl})
-				
+
 	def check_adjustment_amount(self, order_id):
 		_logger.info("= Called check_adjustment_amount = %s", order_id)
 		history_res = self.env['foodics.pos.history'].search(
@@ -643,7 +644,7 @@ class FoodicsOrderProcess(models.Model):
 				for history_id in history_res:
 					history_id.write({'status': 'exceptions',
 									  'fail_reason': 'Please Add Adjustment Product in Foodic Bridge config for cash rounding'})
-				
+
 		else:
 			_logger.info("Amoun different: %s", adjustment_amount)
 			self.remove_unmatched_orders(order_id)
@@ -652,7 +653,7 @@ class FoodicsOrderProcess(models.Model):
 								  'fail_reason': 'Amount tolal and amount paid are different.'})
 			# foo_pos_order_res.write({'status': 'exceptions',
 			#                          'fail_reason': 'Amount tolal and amount paid are different.'})
-		
+
 	def create_mapping_record(self, order_id, order_dic):
 		self.env['foodics.orders.mapping'].create({
 			'order_id': order_id.id,
@@ -661,7 +662,7 @@ class FoodicsOrderProcess(models.Model):
 			'foodics_created_date': order_dic['created_at'],
 			'foodics_update_date': order_dic['updated_at'],
 		})
-			
+
 	def check_order_valid(self, foo_pos_order_res, order_dic):
 		_logger.info("= check_order_valid")
 		pos_order_obj = self.env['pos.order']
@@ -676,7 +677,7 @@ class FoodicsOrderProcess(models.Model):
 
 				# Search or Create Customer
 				partner_id = self.check_customer(order_dic)
-				
+
 				# Search or Create Payment Method
 				payment_list = self.check_payment(order_dic, session_id)
 
@@ -699,7 +700,7 @@ class FoodicsOrderProcess(models.Model):
 				})
 				# Update line data
 				self.process_line_onchanges(order_id)
-				
+
 				for line_rec in order_id.lines:
 					line_rec.qty = round(line_rec.qty, 2)
 					line_rec.price_unit = round(line_rec.price_unit, 2)
@@ -708,13 +709,13 @@ class FoodicsOrderProcess(models.Model):
 
 				# Call Order Onchanges
 				order_id._onchange_amount_all()
-				
+
 				try:
 					order_id.action_pos_order_paid()
 					foo_pos_order_res.write({'status': 'done'})
 					# Create mapping record for order
 					self.create_mapping_record(order_id, order_dic)
-					
+
 				except Exception as e:
 					try:
 						# Adjustment for unbalanced amount
