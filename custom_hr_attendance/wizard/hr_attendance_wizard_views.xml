@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+        
+        <!-- <act_window id="create_customer_portal_user_action"
+            name="UL88 Create Portal User"
+            binding_model="res.partner"
+            res_model="portal.customer.user.wizard"
+            view_mode="form" target="new"
+            groups="base.group_partner_manager"/> -->
+
+
+
+        <!-- wizard view -->
+        <record id="zk_attendance_wizard_view" model="ir.ui.view">
+            <field name="name">zk attendance wizard</field>
+            <field name="model">zk.attendance.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Attendance Wizard">  
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="port"/>
+                        </group>
+                        <group>
+                            <field name="type_date"/>
+                            <field name="date" attrs="{'invisible': [('type_date', '=', 'in_between_date')] ,'required': [('type_date', '=', 'p_date')]}"/>
+                            <field name="from_date" attrs="{'invisible': [('type_date', '=', 'p_date')] ,'required': [('type_date', '=', 'in_between_date')]}"/>
+                            <field name="to_date" attrs="{'invisible': [('type_date', '=', 'p_date')] ,'required': [('type_date', '=', 'in_between_date')]}"/>
+                        </group>
+                    </group>
+                    <footer>
+                        <button string="Ok" name="get_attendance_data" type="object" class="btn-primary"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_zk_attendance_wizard_view" model="ir.actions.act_window">
+            <field name="name">Attendance Wizard</field>
+            <field name="res_model">zk.attendance.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="zk_attendance_wizard_view"/>
+            <field name="target">new</field>
+        </record>
+
+        <menuitem id="menu_zk_attendance_wizard" name="Attendance wizard" parent="hr_zk_attendance.zk_machine_menu"
+              sequence="4" action="action_zk_attendance_wizard_view"/>
+
+</odoo>

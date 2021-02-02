@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_zk_correction_conf_form" model="ir.ui.view">
+        <field name="name">zk.correction.conf.form</field>
+        <field name="model">zk.correction.conf</field>
+        <field name="arch" type="xml">
+            <form string="Attendance Correction Conf">
+                
+                <sheet>
+                    <group>
+                        <group>
+                            <!-- <field name="add_remove_hours"/> -->
+                            <field name="global_in_time"/>
+                        </group>
+                        <group>
+                            <field name="global_out_time"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="zk_correction_conf_form_action" model="ir.actions.act_window">
+        <field name="name">Attendances Correctionm Conf</field>
+        <field name="res_model">zk.correction.conf</field>
+        <field name="view_mode">form</field>
+    </record>
+
+    <menuitem id="zk_correction_conf_menu" parent="zk_machine_menu" action="zk_correction_conf_form_action" name="Attendances Correctionm Conf" />
+</odoo>
+

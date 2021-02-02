@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_zk_correction_conf_form" model="ir.ui.view">
+        <field name="name">zk.correction.conf.form</field>
+        <field name="model">zk.correction.conf</field>
+        <field name="arch" type="xml">
+            <form string="Attendances Global Time">
+                
+                <sheet>
+                    <group>
+                        <group>
+                            <!-- <field name="add_remove_hours"/> -->
+                            <field name="global_in_time"/>
+                        </group>
+                        <group>
+                            <field name="global_out_time"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+
+    <record id="view_zk_correction_conf_tree" model="ir.ui.view">
+        <field name="name">zk.correction.conf.tree</field>
+        <field name="model">zk.correction.conf</field>
+        <field name="arch" type="xml">
+            <tree string="Attendances Global Time">
+                <field name="global_in_time"/>
+                <field name="global_out_time"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="zk_correction_conf_form_action" model="ir.actions.act_window">
+        <field name="name">Attendances Global Time</field>
+        <field name="res_model">zk.correction.conf</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="zk_correction_conf_menu" parent="pro_hr_zk_attendance.zk_machine_menu" action="zk_correction_conf_form_action" name="Attendances Global Time Conf" sequence="4"/>
+</odoo>
+
