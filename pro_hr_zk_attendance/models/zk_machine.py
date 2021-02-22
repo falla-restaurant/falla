@@ -26,7 +26,7 @@ class HrAttendance(models.Model):
 
 class ZkMachine(models.Model):
     _name = 'zk.machine'
-    
+
     name = fields.Char(string='Machine IP', required=True)
     port_no = fields.Integer(string='Port No', required=True)
     address_id = fields.Many2one('res.partner', string='Working Address')
@@ -56,7 +56,7 @@ class ZkMachine(models.Model):
         except:
             conn = False
         return conn
-    
+
     # def clear_attendance(self):
     #     for info in self:
     #         try:
@@ -103,7 +103,7 @@ class ZkMachine(models.Model):
         try:
             zk.data_recv, addr = zk.zkclient.recvfrom(1024)
             if self.getSizeUser(zk):
-                
+
                 bytes = self.getSizeUser(zk)
                 while bytes > 0:
                     data_recv, addr = zk.zkclient.recvfrom(1032)
@@ -144,7 +144,7 @@ class ZkMachine(models.Model):
         machines = self.env['zk.machine'].search([])
         for machine in machines :
             machine.download_attendance()
-        
+
     def download_attendance(self):
         zk_attendance = self.env['zk.machine.attendance']
         att_obj = self.env['hr.attendance']
@@ -191,27 +191,27 @@ class ZkMachine(models.Model):
                         for x in range(len(zk.attendancedata)):
                             if x > 0:
                                 zk.attendancedata[x] = zk.attendancedata[x][8:]
-                        attendancedata = b''.join(zk.attendancedata) 
-                        attendancedata = attendancedata[14:] 
+                        attendancedata = b''.join(zk.attendancedata)
+                        attendancedata = attendancedata[14:]
                         while len(attendancedata) > 0:
                             uid, state, timestamp, space = unpack('24s1s4s11s', attendancedata.ljust(40)[:40])
                             pls = unpack('c', attendancedata[29:30])
                             uid = uid.split(b'\x00', 1)[0].decode('utf-8')
                             tmp = ''
                             for i in reversed(range(int(len(binascii.hexlify(timestamp)) / 2))):
-                                tmp += binascii.hexlify(timestamp).decode('utf-8')[i * 2:(i * 2) + 2] 
+                                tmp += binascii.hexlify(timestamp).decode('utf-8')[i * 2:(i * 2) + 2]
                             attendance.append((uid, int(binascii.hexlify(state), 16),
                                                decode_time(int(tmp, 16)), unpack('HHHH', space[:8])[0]))
-                            
+
                             attendancedata = attendancedata[40:]
 
-                    
+
                 except Exception as e:
                     attendance = False
-                
+
                 # attendance = [
                 #                 ('1', 1, datetime(2020, 1, 19, 11, 54, 15), 0), ('2', 1, datetime(2020, 1, 19, 11, 58, 32), 0), ('3', 1, datetime(2020, 1, 19, 11, 58, 48), 0), ('4', 1, datetime(2020, 1, 19, 12, 0, 8), 0), ('5', 1, datetime(2020, 1, 19, 12, 3, 1), 0), ('6', 1, datetime(2020, 1, 19, 12, 6, 18), 0), ('1', 1, datetime(2020, 1, 19, 14, 43, 13), 0), ('6', 1, datetime(2020, 1, 19, 14, 47, 5), 0), ('13', 1, datetime(2020, 1, 19, 16, 5, 54), 0), ('13', 1, datetime(2020, 1, 19, 16, 6, 3), 1), ('12', 1, datetime(2020, 1, 19, 16, 6, 36), 1), ('9', 1, datetime(2020, 1, 19, 16, 9, 59), 1), ('5', 1, datetime(2020, 1, 19, 16, 11), 1), ('10', 1, datetime(2020, 1, 19, 16, 11, 52), 1), ('7', 1, datetime(2020, 1, 19, 16, 12, 4), 1), ('10', 1, datetime(2020, 1, 19, 16, 13, 40), 1), ('14', 1, datetime(2020, 1, 19, 16, 13, 54), 1), ('1', 1, datetime(2020, 1, 19, 16, 14, 1), 1),
-                #                 ('14', 1, datetime(2020, 2, 7, 6, 43, 22), 1), ('14', 1, datetime(2020, 2, 7, 6, 43, 43), 0), ('18', 1, datetime(2020, 2, 7, 6, 43, 48), 0), ('9', 1, datetime(2020, 2, 7, 6, 43, 54), 0), ('16', 1, datetime(2020, 2, 7, 6, 44, 7), 0), ('7', 1, datetime(2020, 2, 7, 6, 44, 19), 0), ('12', 1, datetime(2020, 2, 7, 6, 44, 24), 0), ('11', 1, datetime(2020, 2, 7, 6, 44, 37), 0), ('10', 1, datetime(2020, 2, 7, 6, 46, 9), 0), ('8', 1, datetime(2020, 2, 7, 6, 48, 17), 0), ('17', 1, datetime(2020, 2, 7, 6, 48, 22), 0), ('13', 1, datetime(2020, 2, 7, 6, 50, 22), 0), ('6', 1, datetime(2020, 2, 7, 6, 51, 2), 0), ('14', 1, datetime(2020, 2, 7, 17, 45, 2), 0),  ('6', 1, datetime(2020, 2, 7, 17, 45, 17), 1), ('8', 1, datetime(2020, 2, 7, 17, 48, 58), 1), ('17', 1, datetime(2020, 2, 7, 17, 51, 21), 1), ('7', 1, datetime(2020, 2, 7, 17, 51, 28), 1), ('13', 1, datetime(2020, 2, 7, 17, 51, 30), 1), ('11', 1, datetime(2020, 2, 7, 17, 51, 47), 1), ('9', 1, datetime(2020, 2, 7, 17, 54, 9), 1), ('16', 1, datetime(2020, 2, 7, 17, 54, 32), 1), ('18', 1, datetime(2020, 2, 7, 17, 54, 40), 1), ('12', 1, datetime(2020, 2, 7, 17, 55, 11), 1), ('10', 1, datetime(2020, 2, 7, 17, 55, 21), 1), 
+                #                 ('14', 1, datetime(2020, 2, 7, 6, 43, 22), 1), ('14', 1, datetime(2020, 2, 7, 6, 43, 43), 0), ('18', 1, datetime(2020, 2, 7, 6, 43, 48), 0), ('9', 1, datetime(2020, 2, 7, 6, 43, 54), 0), ('16', 1, datetime(2020, 2, 7, 6, 44, 7), 0), ('7', 1, datetime(2020, 2, 7, 6, 44, 19), 0), ('12', 1, datetime(2020, 2, 7, 6, 44, 24), 0), ('11', 1, datetime(2020, 2, 7, 6, 44, 37), 0), ('10', 1, datetime(2020, 2, 7, 6, 46, 9), 0), ('8', 1, datetime(2020, 2, 7, 6, 48, 17), 0), ('17', 1, datetime(2020, 2, 7, 6, 48, 22), 0), ('13', 1, datetime(2020, 2, 7, 6, 50, 22), 0), ('6', 1, datetime(2020, 2, 7, 6, 51, 2), 0), ('14', 1, datetime(2020, 2, 7, 17, 45, 2), 0),  ('6', 1, datetime(2020, 2, 7, 17, 45, 17), 1), ('8', 1, datetime(2020, 2, 7, 17, 48, 58), 1), ('17', 1, datetime(2020, 2, 7, 17, 51, 21), 1), ('7', 1, datetime(2020, 2, 7, 17, 51, 28), 1), ('13', 1, datetime(2020, 2, 7, 17, 51, 30), 1), ('11', 1, datetime(2020, 2, 7, 17, 51, 47), 1), ('9', 1, datetime(2020, 2, 7, 17, 54, 9), 1), ('16', 1, datetime(2020, 2, 7, 17, 54, 32), 1), ('18', 1, datetime(2020, 2, 7, 17, 54, 40), 1), ('12', 1, datetime(2020, 2, 7, 17, 55, 11), 1), ('10', 1, datetime(2020, 2, 7, 17, 55, 21), 1),
 
                 #                 ('6', 1, datetime(2020, 2, 18, 6, 42, 5), 1), ('6', 1, datetime(2020, 2, 18, 6, 42, 17), 0), ('12', 1, datetime(2020, 2, 18, 6, 42, 23), 0), ('7', 1, datetime(2020, 2, 18, 6, 42, 34), 0), ('18', 1, datetime(2020, 2, 18, 6, 42, 59), 0), ('9', 1, datetime(2020, 2, 18, 6, 43, 5), 0), ('16', 1, datetime(2020, 2, 18, 6, 43, 12), 0), ('17', 1, datetime(2020, 2, 18, 6, 47, 33), 0), ('14', 1, datetime(2020, 2, 18, 6, 47, 38), 0), ('8', 1, datetime(2020, 2, 18, 6, 47, 44), 0), ('13', 1, datetime(2020, 2, 18, 6, 50, 35), 0), ('2', 1, datetime(2020, 2, 18, 8, 46, 23), 0), ('18', 1, datetime(2020, 2, 18, 15, 59, 22), 0), ('18', 1, datetime(2020, 2, 18, 15, 59, 34), 1), ('12', 1, datetime(2020, 2, 18, 15, 59, 43), 1), ('8', 1, datetime(2020, 2, 18, 15, 59, 52), 1), ('13', 1, datetime(2020, 2, 18, 16, 2, 59), 1), ('7', 1, datetime(2020, 2, 18, 16, 6, 12), 1), ('16', 1, datetime(2020, 2, 18, 16, 9, 40), 1), ('17', 1, datetime(2020, 2, 18, 16, 11, 21), 1), ('6', 1, datetime(2020, 2, 18, 16, 11, 28), 1), ('14', 1, datetime(2020, 2, 18, 16, 11, 48), 1), ('2', 1, datetime(2020, 2, 18, 18, 0, 49), 1),
 
@@ -221,7 +221,7 @@ class ZkMachine(models.Model):
 
                 #                 ('14', 1, datetime(2020, 2, 24, 6, 40, 54), 1), ('16', 1, datetime(2020, 2, 24, 6, 41, 3), 1), ('6', 1, datetime(2020, 2, 24, 6, 41, 11), 0), ('14', 1, datetime(2020, 2, 24, 6, 41, 17), 0), ('16', 1, datetime(2020, 2, 24, 6, 41, 24), 0), ('10', 1, datetime(2020, 2, 24, 6, 43, 20), 0), ('17', 1, datetime(2020, 2, 24, 6, 45, 49), 0), ('8', 1, datetime(2020, 2, 24, 6, 46, 3), 0), ('11', 1, datetime(2020, 2, 24, 6, 46, 10), 0), ('13', 1, datetime(2020, 2, 24, 6, 58, 43), 0), ('1', 1, datetime(2020, 2, 24, 7, 42, 43), 0), ('2', 1, datetime(2020, 2, 24, 8, 51, 52), 0), ('14', 1, datetime(2020, 2, 24, 16, 29, 4), 0), ('11', 1, datetime(2020, 2, 24, 16, 32, 30), 1), ('17', 1, datetime(2020, 2, 24, 16, 34, 27), 1), ('8', 1, datetime(2020, 2, 24, 16, 34, 56), 1), ('13', 1, datetime(2020, 2, 24, 16, 35, 14), 1), ('6', 1, datetime(2020, 2, 24, 16, 36, 1), 1), ('10', 1, datetime(2020, 2, 24, 16, 36, 49), 1), ('16', 1, datetime(2020, 2, 24, 16, 38, 13), 1), ('2', 1, datetime(2020, 2, 24, 18, 2, 35), 1), ('6', 1, datetime(2020, 2, 25, 6, 46, 17), 0), ('12', 1, datetime(2020, 2, 25, 6, 46, 24), 0), ('16', 1, datetime(2020, 2, 25, 6, 46, 41), 0), ('9', 1, datetime(2020, 2, 25, 6, 48, 49), 0), ('10', 1, datetime(2020, 2, 25, 6, 49, 1), 0), ('8', 1, datetime(2020, 2, 25, 6, 52, 13), 0), ('17', 1, datetime(2020, 2, 25, 6, 52, 26), 0), ('2', 1, datetime(2020, 2, 25, 8, 51, 5), 0), ('12', 1, datetime(2020, 2, 25, 16, 51, 57), 1), ('8', 1, datetime(2020, 2, 25, 16, 52, 18), 1), ('9', 1, datetime(2020, 2, 25, 16, 55, 40), 1), ('6', 1, datetime(2020, 2, 25, 16, 55, 45), 1), ('14', 1, datetime(2020, 2, 25, 16, 55, 51), 1), ('16', 1, datetime(2020, 2, 25, 16, 56, 7), 1), ('17', 1, datetime(2020, 2, 25, 16, 56, 55), 1), ('10', 1, datetime(2020, 2, 25, 17, 0, 23), 1), ('2', 1, datetime(2020, 2, 25, 18, 1, 20), 1)]
 
-                
+
                 print("========attendance======", attendance)
                 print("========user======", user)
                 if attendance:
@@ -252,134 +252,137 @@ class ZkMachine(models.Model):
                                         if duplicate_atten_ids:
                                             continue
                                         else:
-                                            zk_attendance.create({'employee_id': get_user_id.id,
-                                                                  'device_id': each[0],
-                                                                  'attendance_type': str(each[1]),
-                                                                  'punch_type': str(each[3]),
-                                                                  'punching_time': atten_time,
-                                                                  'address_id': info.address_id.id})
+                                            try:
+                                                zk_attendance.create({'employee_id': get_user_id.id,
+                                                                      'device_id': each[0],
+                                                                      'attendance_type': str(each[1]),
+                                                                      'punch_type': str(each[3]),
+                                                                      'punching_time': atten_time,
+                                                                      'address_id': info.address_id.id})
 
-                                            #split Global check-in and check-out time
-                                            time_in = attendance_conf_id.global_in_time.split(':')
-                                            time_out = attendance_conf_id.global_out_time.split(':')
-                                            if each[3] == 0: #check-in
-                                                att_var = att_obj.search([('employee_id', '=', get_user_id.id),
-                                                                       ('check_out', '=', False), ('check_in', '<', atten_start_time)], order='check_in desc', limit=1)
-                                                att_var_for_same_day = att_obj.search([('employee_id', '=', get_user_id.id),
-                                                                       ('check_in', '>=', atten_start_time),('check_in', '<=', atten_end_time)], order='check_in desc', limit=1)
+                                                #split Global check-in and check-out time
+                                                time_in = attendance_conf_id.global_in_time.split(':')
+                                                time_out = attendance_conf_id.global_out_time.split(':')
+                                                if each[3] == 0: #check-in
+                                                    att_var = att_obj.search([('employee_id', '=', get_user_id.id),
+                                                                           ('check_out', '=', False), ('check_in', '<', atten_start_time)], order='check_in desc', limit=1)
+                                                    att_var_for_same_day = att_obj.search([('employee_id', '=', get_user_id.id),
+                                                                           ('check_in', '>=', atten_start_time),('check_in', '<=', atten_end_time)], order='check_in desc', limit=1)
 
-                                                att_in_list = zk_attendance.search([('employee_id', '=', get_user_id.id),
-                                                                      ('punching_time', '>=', atten_start_time),('punching_time', '<=', atten_end_time),('punch_type', '=', '0')])
-                                                if not att_var:
-                                                    #if no check-out time before today, check-in not on same day and there is multiple check-in on same da then tale letest punch time in check-in.
-                                                    if not att_var_for_same_day:
-                                                        if len(att_in_list) == 1:
+                                                    att_in_list = zk_attendance.search([('employee_id', '=', get_user_id.id),
+                                                                          ('punching_time', '>=', atten_start_time),('punching_time', '<=', atten_end_time),('punch_type', '=', '0')])
+                                                    if not att_var:
+                                                        #if no check-out time before today, check-in not on same day and there is multiple check-in on same da then tale letest punch time in check-in.
+                                                        if not att_var_for_same_day:
+                                                            if len(att_in_list) == 1:
+                                                                att_obj.create({'employee_id': get_user_id.id,
+                                                                                'check_in': atten_time})
+
+                                                            else:
+                                                                oldest_in_time = att_in_list[0].punching_time
+                                                                n = len(att_in_list)
+                                                                for l in range(1, n):
+                                                                    if oldest_in_time > att_in_list[l].punching_time:
+                                                                        oldest_in_time = att_in_list[l].punching_time
+                                                                if str(oldest_in_time) > atten_time:
+                                                                    hr_att = att_obj.search([('employee_id', '=', get_user_id.id),
+                                                                            ('check_in', '>=', atten_start_time),('check_in', '<=', atten_end_time)], limit=1)
+                                                                    hr_att.write({'check_in': atten_time})
+                                                                else:
+                                                                    hr_att = att_obj.search([('employee_id', '=', get_user_id.id),
+                                                                            ('check_in', '>=', atten_start_time),('check_in', '<=', atten_end_time)], limit=1)
+                                                                    hr_att.write({'check_in': oldest_in_time})
+                                                    else:
+                                                        # if not check-out and check-in on next date.
+                                                        if len(att_var) == 1:
+                                                            check_in_date = att_var.check_in
+                                                            check_out = check_in_date.replace(minute=int(time_out[1]), hour=int(time_out[0]), second=00)
+                                                            att_var.write({'check_out': check_out})
                                                             att_obj.create({'employee_id': get_user_id.id,
                                                                             'check_in': atten_time})
 
                                                         else:
-                                                            oldest_in_time = att_in_list[0].punching_time
-                                                            n = len(att_in_list)
-                                                            for l in range(1, n):
-                                                                if oldest_in_time > att_in_list[l].punching_time:
-                                                                    oldest_in_time = att_in_list[l].punching_time
-                                                            if str(oldest_in_time) > atten_time:
-                                                                hr_att = att_obj.search([('employee_id', '=', get_user_id.id),
-                                                                        ('check_in', '>=', atten_start_time),('check_in', '<=', atten_end_time)], limit=1)
-                                                                hr_att.write({'check_in': atten_time})
-                                                            else:
-                                                                hr_att = att_obj.search([('employee_id', '=', get_user_id.id),
-                                                                        ('check_in', '>=', atten_start_time),('check_in', '<=', atten_end_time)], limit=1)
-                                                                hr_att.write({'check_in': oldest_in_time})
-                                                else:
-                                                    # if not check-out and check-in on next date.
-                                                    if len(att_var) == 1:
-                                                        check_in_date = att_var.check_in
-                                                        check_out = check_in_date.replace(minute=int(time_out[1]), hour=int(time_out[0]), second=00)
-                                                        att_var.write({'check_out': check_out})
-                                                        att_obj.create({'employee_id': get_user_id.id,
-                                                                        'check_in': atten_time})
+                                                            check_in_date = att_var[-1].check_in
+                                                            check_out = check_in_date.replace(minute=int(time_out[1]), hour=int(time_out[0]), second=00)
+                                                            att_var[-1].write({'check_out': check_out})
+                                                            att_obj.create({'employee_id': get_user_id.id,
+                                                                            'check_in': atten_time})
 
-                                                    else:
-                                                        check_in_date = att_var[-1].check_in
-                                                        check_out = check_in_date.replace(minute=int(time_out[1]), hour=int(time_out[0]), second=00)
-                                                        att_var[-1].write({'check_out': check_out})
-                                                        att_obj.create({'employee_id': get_user_id.id,
-                                                                        'check_in': atten_time})
+                                                if each[3] == 1: #check-out
+                                                    att_in_list = zk_attendance.search([('employee_id', '=', get_user_id.id),
+                                                                          ('punching_time', '>=', atten_start_time),('punching_time', '<=', atten_end_time),('punch_type', '=', '1')])
 
-                                            if each[3] == 1: #check-out
-                                                att_in_list = zk_attendance.search([('employee_id', '=', get_user_id.id),
-                                                                      ('punching_time', '>=', atten_start_time),('punching_time', '<=', atten_end_time),('punch_type', '=', '1')])
-
-                                                if len(att_in_list) == 1:
-                                                    # if check-out first time
-                                                    hr_att = att_obj.search([('employee_id', '=', get_user_id.id),
-                                                                      ('check_in', '>=', atten_start_time),('check_in', '<=', atten_end_time)], limit=1)
-                                                    if not hr_att:
-                                                        # check-out without check-in on same day. 
-                                                        in_time = atten_start_time.replace(minute=int(time_in[1]), hour=int(time_in[0]), second=00)
-                                                        if str(in_time) < str(atten_time):
-                                                            #check-out time is greater than check-in time
-                                                            att_var = att_obj.search([('employee_id', '=', get_user_id.id),
-                                                                       ('check_out', '=', False), ('check_in', '<', atten_start_time)], order='check_in desc', limit=1)
-                                                            if not att_var:
-                                                                hr_att = att_obj.create({'employee_id': get_user_id.id,
-                                                                                'check_in': in_time}) 
-                                                                hr_att.write({'check_out': atten_time})
-                                                            else:
-                                                                check_in_date = att_var.check_in
-                                                                check_out = check_in_date.replace(minute=int(time_out[1]), hour=int(time_out[0]), second=00)
-                                                                att_var.write({'check_out': check_out})
-                                                                hr_att = att_obj.create({'employee_id': get_user_id.id,
-                                                                                'check_in': in_time}) 
-                                                                hr_att.write({'check_out': atten_time})
-                                                        else:
-                                                            #check-out time is smaller then check-in time
-                                                            att_var = att_obj.search([('employee_id', '=', get_user_id.id),
-                                                                       ('check_out', '=', False), ('check_in', '<', atten_start_time)], order='check_in desc', limit=1)
-                                                            if not att_var:
-                                                                hr_att_id = att_obj.create({'employee_id': get_user_id.id,'check_in': att_update_min}) 
-                                                                hr_att_id.write({'check_out': atten_time})
-                                                            else:
-                                                                check_in_date = att_var.check_in
-                                                                check_out = check_in_date.replace(minute=int(time_out[1]), hour=int(time_out[0]), second=00)
-                                                                att_var.write({'check_out': check_out})
-                                                                hr_att = att_obj.create({'employee_id': get_user_id.id,
-                                                                                'check_in': att_update_min}) 
-                                                                hr_att.write({'check_out': atten_time})
-
-                                                    else:
-                                                        hr_att.write({'check_out': atten_time}) 
-                                                    
-                                                else:
-                                                    # multiple check-out on same date.
-                                                    oldest_in_time = att_in_list[0].punching_time
-                                                    n = len(att_in_list)
-                                                    for l in range(1, n):
-                                                        if att_in_list[l].punching_time > oldest_in_time:
-                                                            oldest_in_time = att_in_list[l].punching_time
-                                                    if str(oldest_in_time) > str(atten_time):
-                                                        in_time = atten_start_time.replace(minute=int(time_in[1]), hour=int(time_in[0]), second=00)
+                                                    if len(att_in_list) == 1:
+                                                        # if check-out first time
                                                         hr_att = att_obj.search([('employee_id', '=', get_user_id.id),
-                                                                        ('check_in', '>=', atten_start_time),('check_in', '<=', atten_end_time)], limit=1)
-                                                        if str(in_time) < str(oldest_in_time):
-                                                            hr_att.write({'check_out': oldest_in_time})
+                                                                          ('check_in', '>=', atten_start_time),('check_in', '<=', atten_end_time)], limit=1)
+                                                        if not hr_att:
+                                                            # check-out without check-in on same day.
+                                                            in_time = atten_start_time.replace(minute=int(time_in[1]), hour=int(time_in[0]), second=00)
+                                                            if str(in_time) < str(atten_time):
+                                                                #check-out time is greater than check-in time
+                                                                att_var = att_obj.search([('employee_id', '=', get_user_id.id),
+                                                                           ('check_out', '=', False), ('check_in', '<', atten_start_time)], order='check_in desc', limit=1)
+                                                                if not att_var:
+                                                                    hr_att = att_obj.create({'employee_id': get_user_id.id,
+                                                                                    'check_in': in_time})
+                                                                    hr_att.write({'check_out': atten_time})
+                                                                else:
+                                                                    check_in_date = att_var.check_in
+                                                                    check_out = check_in_date.replace(minute=int(time_out[1]), hour=int(time_out[0]), second=00)
+                                                                    att_var.write({'check_out': check_out})
+                                                                    hr_att = att_obj.create({'employee_id': get_user_id.id,
+                                                                                    'check_in': in_time})
+                                                                    hr_att.write({'check_out': atten_time})
+                                                            else:
+                                                                #check-out time is smaller then check-in time
+                                                                att_var = att_obj.search([('employee_id', '=', get_user_id.id),
+                                                                           ('check_out', '=', False), ('check_in', '<', atten_start_time)], order='check_in desc', limit=1)
+                                                                if not att_var:
+                                                                    hr_att_id = att_obj.create({'employee_id': get_user_id.id,'check_in': att_update_min})
+                                                                    hr_att_id.write({'check_out': atten_time})
+                                                                else:
+                                                                    check_in_date = att_var.check_in
+                                                                    check_out = check_in_date.replace(minute=int(time_out[1]), hour=int(time_out[0]), second=00)
+                                                                    att_var.write({'check_out': check_out})
+                                                                    hr_att = att_obj.create({'employee_id': get_user_id.id,
+                                                                                    'check_in': att_update_min})
+                                                                    hr_att.write({'check_out': atten_time})
+
                                                         else:
-                                                            time_min_in = int(time_in[1]) + 1
-                                                            d_atten_time = atten_start_time.replace(minute=time_min_in, hour=int(time_in[0]), second=00)
-                                                            hr_att.write({'check_out': d_atten_time})
-                                                    else:
-                                                        in_time = atten_start_time.replace(minute=int(time_in[1]), hour=int(time_in[0]), second=00)
-                                                        hr_att = att_obj.search([('employee_id', '=', get_user_id.id),
-                                                                    ('check_in', '>=', atten_start_time),('check_in', '<=', atten_end_time)], limit=1)
-                                                        if str(atten_time) > str(in_time):
                                                             hr_att.write({'check_out': atten_time})
+
+                                                    else:
+                                                        # multiple check-out on same date.
+                                                        oldest_in_time = att_in_list[0].punching_time
+                                                        n = len(att_in_list)
+                                                        for l in range(1, n):
+                                                            if att_in_list[l].punching_time > oldest_in_time:
+                                                                oldest_in_time = att_in_list[l].punching_time
+                                                        if str(oldest_in_time) > str(atten_time):
+                                                            in_time = atten_start_time.replace(minute=int(time_in[1]), hour=int(time_in[0]), second=00)
+                                                            hr_att = att_obj.search([('employee_id', '=', get_user_id.id),
+                                                                            ('check_in', '>=', atten_start_time),('check_in', '<=', atten_end_time)], limit=1)
+                                                            if str(in_time) < str(oldest_in_time):
+                                                                hr_att.write({'check_out': oldest_in_time})
+                                                            else:
+                                                                time_min_in = int(time_in[1]) + 1
+                                                                d_atten_time = atten_start_time.replace(minute=time_min_in, hour=int(time_in[0]), second=00)
+                                                                hr_att.write({'check_out': d_atten_time})
                                                         else:
-                                                            time_min_in = int(time_in[1]) + 1
-                                                            d_atten_time = atten_start_time.replace(minute=time_min_in, hour=int(time_in[0]), second=00)
-                                                            hr_att.write({'check_out': d_atten_time})
-                                         
-                                            
+                                                            in_time = atten_start_time.replace(minute=int(time_in[1]), hour=int(time_in[0]), second=00)
+                                                            hr_att = att_obj.search([('employee_id', '=', get_user_id.id),
+                                                                        ('check_in', '>=', atten_start_time),('check_in', '<=', atten_end_time)], limit=1)
+                                                            if str(atten_time) > str(in_time):
+                                                                hr_att.write({'check_out': atten_time})
+                                                            else:
+                                                                time_min_in = int(time_in[1]) + 1
+                                                                d_atten_time = atten_start_time.replace(minute=time_min_in, hour=int(time_in[0]), second=00)
+                                                                hr_att.write({'check_out': d_atten_time})
+
+                                            except Exception as e:
+                                                _logger.info("******Exception************ %s",e)
+                                                continue
 
                                     else:
                                         employee = self.env['hr.employee'].create(
@@ -391,17 +394,18 @@ class ZkMachine(models.Model):
                                                                 'punch_type': str(each[3]),
                                                                 'punching_time': atten_time,
                                                                 'address_id': info.address_id.id})
+                                            if each[3] == 0:
+                                                att_obj.create({'employee_id': employee.id,
+                                                                'check_in': atten_time})
+                                            if each[3] == 1:
+                                                g_time_in = attendance_conf_id.global_in_time.split(':')
+                                                in_time = atten_start_time.replace(minute=int(g_time_in[1]), hour=int(g_time_in[0]), second=00)
+                                                att_id  = att_obj.create({'employee_id': employee.id,
+                                                                'check_in': in_time})
+                                                att_id.write({'check_out': atten_time})
                                         except Exception as e:
                                             _logger.info("++++++++++++Att Exception++++++++++++++++++++++", e)
-                                        if each[3] == 0:
-                                            att_obj.create({'employee_id': employee.id,
-                                                            'check_in': atten_time})
-                                        if each[3] == 1:
-                                            g_time_in = attendance_conf_id.global_in_time.split(':')
-                                            in_time = atten_start_time.replace(minute=int(g_time_in[1]), hour=int(g_time_in[0]), second=00)
-                                            att_id  = att_obj.create({'employee_id': employee.id,
-                                                            'check_in': in_time})
-                                            att_id.write({'check_out': atten_time})
+                                            continue
                                 else:
                                     pass
                     zk.enableDevice()
