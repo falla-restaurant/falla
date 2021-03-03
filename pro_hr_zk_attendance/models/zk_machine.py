@@ -142,14 +142,26 @@ class ZkMachine(models.Model):
     @api.model
     def cron_download(self):
         machines = self.env['zk.machine'].search([])
+        temp = 0
         for machine in machines :
+            temp = 1
             try:
                 machine.download_attendance()
-                _logger.info("***147***zk machine************ %s",machine)
-            except Exception as e:
                 _logger.info("***150***zk machine************ %s",machine)
-                _logger.info("***149***Exception************ %s",e)
+            except Exception as e:
+                _logger.info("***152***zk machine************ %s",machine)
+                _logger.info("***153***Exception************ %s",e)
                 continue
+        if temp == 1:
+            temp = 2
+            for machine in machines :
+                try:
+                    machine.download_attendance()
+                    _logger.info("***160***zk machine************ %s",machine)
+                except Exception as e:
+                    _logger.info("***162***zk machine************ %s",machine)
+                    _logger.info("***163***Exception************ %s",e)
+                    continue
 
     def download_attendance(self):
         zk_attendance = self.env['zk.machine.attendance']
