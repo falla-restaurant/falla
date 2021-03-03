@@ -145,21 +145,20 @@ class ZkMachine(models.Model):
         temp = 0
         for machine in machines :
             temp = 1
+            _logger.info("******machine exception start***********")
             try:
+                _logger.info("***150**try*zk machine************ %s",machine.name)
                 machine.download_attendance()
-                _logger.info("***150***zk machine************ %s",machine.name)
             except Exception as e:
                 try:
+                    _logger.info("***155**try*zk machine************ %s",machine.name)
                     machine.download_attendance()
-                    _logger.info("***150***zk machine************ %s",machine.name)
                 except Exception as e:
-
-                    _logger.info("***152***zk machine************ %s",machine.name)
-                    _logger.info("***153***Exception************ %s",e)
+                    _logger.info("***157***Exception************ %s",e)
                     continue
-                _logger.info("***152***zk machine************ %s",machine.name)
-                _logger.info("***153***Exception************ %s",e)
+                _logger.info("***159***Exception************ %s",e)
                 continue
+            _logger.info("******machine exception end***********")
 
     def download_attendance(self):
         zk_attendance = self.env['zk.machine.attendance']
