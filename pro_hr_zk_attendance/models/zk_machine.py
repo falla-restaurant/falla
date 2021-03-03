@@ -145,7 +145,9 @@ class ZkMachine(models.Model):
         for machine in machines :
             try:
                 machine.download_attendance()
+                _logger.info("***147***zk machine************ %s",machine)
             except Exception as e:
+                _logger.info("***150***zk machine************ %s",machine)
                 _logger.info("***149***Exception************ %s",e)
                 continue
 
@@ -226,8 +228,8 @@ class ZkMachine(models.Model):
                 #                 ('14', 1, datetime(2020, 2, 24, 6, 40, 54), 1), ('16', 1, datetime(2020, 2, 24, 6, 41, 3), 1), ('6', 1, datetime(2020, 2, 24, 6, 41, 11), 0), ('14', 1, datetime(2020, 2, 24, 6, 41, 17), 0), ('16', 1, datetime(2020, 2, 24, 6, 41, 24), 0), ('10', 1, datetime(2020, 2, 24, 6, 43, 20), 0), ('17', 1, datetime(2020, 2, 24, 6, 45, 49), 0), ('8', 1, datetime(2020, 2, 24, 6, 46, 3), 0), ('11', 1, datetime(2020, 2, 24, 6, 46, 10), 0), ('13', 1, datetime(2020, 2, 24, 6, 58, 43), 0), ('1', 1, datetime(2020, 2, 24, 7, 42, 43), 0), ('2', 1, datetime(2020, 2, 24, 8, 51, 52), 0), ('14', 1, datetime(2020, 2, 24, 16, 29, 4), 0), ('11', 1, datetime(2020, 2, 24, 16, 32, 30), 1), ('17', 1, datetime(2020, 2, 24, 16, 34, 27), 1), ('8', 1, datetime(2020, 2, 24, 16, 34, 56), 1), ('13', 1, datetime(2020, 2, 24, 16, 35, 14), 1), ('6', 1, datetime(2020, 2, 24, 16, 36, 1), 1), ('10', 1, datetime(2020, 2, 24, 16, 36, 49), 1), ('16', 1, datetime(2020, 2, 24, 16, 38, 13), 1), ('2', 1, datetime(2020, 2, 24, 18, 2, 35), 1), ('6', 1, datetime(2020, 2, 25, 6, 46, 17), 0), ('12', 1, datetime(2020, 2, 25, 6, 46, 24), 0), ('16', 1, datetime(2020, 2, 25, 6, 46, 41), 0), ('9', 1, datetime(2020, 2, 25, 6, 48, 49), 0), ('10', 1, datetime(2020, 2, 25, 6, 49, 1), 0), ('8', 1, datetime(2020, 2, 25, 6, 52, 13), 0), ('17', 1, datetime(2020, 2, 25, 6, 52, 26), 0), ('2', 1, datetime(2020, 2, 25, 8, 51, 5), 0), ('12', 1, datetime(2020, 2, 25, 16, 51, 57), 1), ('8', 1, datetime(2020, 2, 25, 16, 52, 18), 1), ('9', 1, datetime(2020, 2, 25, 16, 55, 40), 1), ('6', 1, datetime(2020, 2, 25, 16, 55, 45), 1), ('14', 1, datetime(2020, 2, 25, 16, 55, 51), 1), ('16', 1, datetime(2020, 2, 25, 16, 56, 7), 1), ('17', 1, datetime(2020, 2, 25, 16, 56, 55), 1), ('10', 1, datetime(2020, 2, 25, 17, 0, 23), 1), ('2', 1, datetime(2020, 2, 25, 18, 1, 20), 1)]
 
 
-                _logger.info("========attendance====== %s", attendance)
-                _logger.info("========user====== %s", user)
+                # _logger.info("========attendance====== %s", attendance)
+                # _logger.info("========user====== %s", user)
                 if attendance:
                     for each in attendance:
                         atten_time = each[2]
