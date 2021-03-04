@@ -20,7 +20,7 @@ class ZKLib:
     def __init__(self, ip, port):
         self.address = (ip, port)
         self.zkclient = socket(AF_INET, SOCK_DGRAM)
-        self.zkclient.settimeout(3)
+        self.zkclient.settimeout(1500)
         self.session_id = 0
         self.userdata = []
         self.attendancedata = []
