@@ -211,25 +211,25 @@ class ZkMachine(models.Model):
                                 _logger.info("***211**exception*********** %s",e)
                                 break
                             bytes -= 1024
-                            _logger.info("***211**bytes*********** %s",bytes)
+                            # _logger.info("***211**bytes*********** %s",bytes)
                         zk.session_id = unpack('HHHH', zk.data_recv[:8])[2]
-                        _logger.info("***212***********")
+                        # _logger.info("***212***********")
                         try:
                             data_recv = zk.zkclient.recvfrom(8)
                         except Exception as e:
                             _logger.info("***219**exception*********** %s",e)
-                        _logger.info("***220***********")
+                        # _logger.info("***220***********")
                     attendance = []
                     # _logger.info("******205************* %s",zk.attendancedata)
                     if len(zk.attendancedata) > 0:
-                        _logger.info("************224*****")
+                        # _logger.info("************224*****")
                         # The first 4 bytes don't seem to be related to the user
                         for x in range(len(zk.attendancedata)):
                             if x > 0:
                                 zk.attendancedata[x] = zk.attendancedata[x][8:]
                         attendancedata = b''.join(zk.attendancedata)
                         attendancedata = attendancedata[14:]
-                        _logger.info("************231*****")
+                        # _logger.info("************231*****")
 
                         while len(attendancedata) > 0:
                             try:
@@ -237,12 +237,12 @@ class ZkMachine(models.Model):
                                 pls = unpack('c', attendancedata[29:30])
                                 uid = uid.split(b'\x00', 1)[0].decode('utf-8')
                                 tmp = ''
-                                _logger.info("************238*****")
+                                # _logger.info("************238*****")
                                 for i in reversed(range(int(len(binascii.hexlify(timestamp)) / 2))):
                                     tmp += binascii.hexlify(timestamp).decode('utf-8')[i * 2:(i * 2) + 2]
                                 attendance.append((uid, int(binascii.hexlify(state), 16),
                                                    decode_time(int(tmp, 16)), unpack('HHHH', space[:8])[0]))
-                                _logger.info("************243*****")
+                                # _logger.info("************243*****")
                                 attendancedata = attendancedata[40:]
 
                             except Exception as e:
@@ -265,11 +265,10 @@ class ZkMachine(models.Model):
 
                 #                 ('14', 1, datetime(2020, 2, 24, 6, 40, 54), 1), ('16', 1, datetime(2020, 2, 24, 6, 41, 3), 1), ('6', 1, datetime(2020, 2, 24, 6, 41, 11), 0), ('14', 1, datetime(2020, 2, 24, 6, 41, 17), 0), ('16', 1, datetime(2020, 2, 24, 6, 41, 24), 0), ('10', 1, datetime(2020, 2, 24, 6, 43, 20), 0), ('17', 1, datetime(2020, 2, 24, 6, 45, 49), 0), ('8', 1, datetime(2020, 2, 24, 6, 46, 3), 0), ('11', 1, datetime(2020, 2, 24, 6, 46, 10), 0), ('13', 1, datetime(2020, 2, 24, 6, 58, 43), 0), ('1', 1, datetime(2020, 2, 24, 7, 42, 43), 0), ('2', 1, datetime(2020, 2, 24, 8, 51, 52), 0), ('14', 1, datetime(2020, 2, 24, 16, 29, 4), 0), ('11', 1, datetime(2020, 2, 24, 16, 32, 30), 1), ('17', 1, datetime(2020, 2, 24, 16, 34, 27), 1), ('8', 1, datetime(2020, 2, 24, 16, 34, 56), 1), ('13', 1, datetime(2020, 2, 24, 16, 35, 14), 1), ('6', 1, datetime(2020, 2, 24, 16, 36, 1), 1), ('10', 1, datetime(2020, 2, 24, 16, 36, 49), 1), ('16', 1, datetime(2020, 2, 24, 16, 38, 13), 1), ('2', 1, datetime(2020, 2, 24, 18, 2, 35), 1), ('6', 1, datetime(2020, 2, 25, 6, 46, 17), 0), ('12', 1, datetime(2020, 2, 25, 6, 46, 24), 0), ('16', 1, datetime(2020, 2, 25, 6, 46, 41), 0), ('9', 1, datetime(2020, 2, 25, 6, 48, 49), 0), ('10', 1, datetime(2020, 2, 25, 6, 49, 1), 0), ('8', 1, datetime(2020, 2, 25, 6, 52, 13), 0), ('17', 1, datetime(2020, 2, 25, 6, 52, 26), 0), ('2', 1, datetime(2020, 2, 25, 8, 51, 5), 0), ('12', 1, datetime(2020, 2, 25, 16, 51, 57), 1), ('8', 1, datetime(2020, 2, 25, 16, 52, 18), 1), ('9', 1, datetime(2020, 2, 25, 16, 55, 40), 1), ('6', 1, datetime(2020, 2, 25, 16, 55, 45), 1), ('14', 1, datetime(2020, 2, 25, 16, 55, 51), 1), ('16', 1, datetime(2020, 2, 25, 16, 56, 7), 1), ('17', 1, datetime(2020, 2, 25, 16, 56, 55), 1), ('10', 1, datetime(2020, 2, 25, 17, 0, 23), 1), ('2', 1, datetime(2020, 2, 25, 18, 1, 20), 1)]
 
-                _logger.info("========user====== %s", len(user))
+                # _logger.info("========user====== %s", len(user))
                 if attendance:
 
                     _logger.info("========attendance====== %s", len(attendance))
-                    _logger.info("========attendance====== %s", attendance)
 
                 else:
                     _logger.info("========attendance====== %s", attendance)
