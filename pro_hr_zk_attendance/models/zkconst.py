@@ -1,6 +1,6 @@
 from datetime import datetime, date
 
-USHRT_MAX = 655350
+USHRT_MAX = 65535
 
 
 CMD_CONNECT = 1000
