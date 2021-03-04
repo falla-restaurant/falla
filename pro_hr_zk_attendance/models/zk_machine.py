@@ -213,27 +213,34 @@ class ZkMachine(models.Model):
                             _logger.info("***211**bytes*********** %s",bytes)
                         zk.session_id = unpack('HHHH', zk.data_recv[:8])[2]
                         _logger.info("***212***********")
-                        # data_recv = zk.zkclient.recvfrom(8)
-                        _logger.info("***214***********")
+                        try:
+                            data_recv = zk.zkclient.recvfrom(8)
+                        except Exception as e:
+                            _logger.info("***219**exception*********** %s",e)
+                        _logger.info("***220***********")
                     attendance = []
-                    _logger.info("******205************* %s",zk.attendancedata)
+                    # _logger.info("******205************* %s",zk.attendancedata)
                     if len(zk.attendancedata) > 0:
+                        _logger.info("************224*****")
                         # The first 4 bytes don't seem to be related to the user
                         for x in range(len(zk.attendancedata)):
                             if x > 0:
                                 zk.attendancedata[x] = zk.attendancedata[x][8:]
                         attendancedata = b''.join(zk.attendancedata)
                         attendancedata = attendancedata[14:]
+                        _logger.info("************231*****")
+
                         while len(attendancedata) > 0:
                             uid, state, timestamp, space = unpack('24s1s4s11s', attendancedata.ljust(40)[:40])
                             pls = unpack('c', attendancedata[29:30])
                             uid = uid.split(b'\x00', 1)[0].decode('utf-8')
                             tmp = ''
+                            _logger.info("************238*****")
                             for i in reversed(range(int(len(binascii.hexlify(timestamp)) / 2))):
                                 tmp += binascii.hexlify(timestamp).decode('utf-8')[i * 2:(i * 2) + 2]
                             attendance.append((uid, int(binascii.hexlify(state), 16),
                                                decode_time(int(tmp, 16)), unpack('HHHH', space[:8])[0]))
-
+                            _logger.info("************243*****")
                             attendancedata = attendancedata[40:]
 
 
