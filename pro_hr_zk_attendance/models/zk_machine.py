@@ -188,7 +188,7 @@ class ZkMachine(models.Model):
                 _logger.info("******session_id************* %s",session_id)
                 _logger.info("******reply_id************* %s",reply_id)
                 _logger.info("******buf************* %s",buf)
-
+                attendance = False
                 try:
                     _logger.info("******193************* %s",zk.attendancedata)
                     zk.data_recv, addr = zk.zkclient.recvfrom(1024)
@@ -231,21 +231,26 @@ class ZkMachine(models.Model):
                         _logger.info("************231*****")
 
                         while len(attendancedata) > 0:
-                            uid, state, timestamp, space = unpack('24s1s4s11s', attendancedata.ljust(40)[:40])
-                            pls = unpack('c', attendancedata[29:30])
-                            uid = uid.split(b'\x00', 1)[0].decode('utf-8')
-                            tmp = ''
-                            _logger.info("************238*****")
-                            for i in reversed(range(int(len(binascii.hexlify(timestamp)) / 2))):
-                                tmp += binascii.hexlify(timestamp).decode('utf-8')[i * 2:(i * 2) + 2]
-                            attendance.append((uid, int(binascii.hexlify(state), 16),
-                                               decode_time(int(tmp, 16)), unpack('HHHH', space[:8])[0]))
-                            _logger.info("************243*****")
-                            attendancedata = attendancedata[40:]
+                            try:
+                                uid, state, timestamp, space = unpack('24s1s4s11s', attendancedata.ljust(40)[:40])
+                                pls = unpack('c', attendancedata[29:30])
+                                uid = uid.split(b'\x00', 1)[0].decode('utf-8')
+                                tmp = ''
+                                _logger.info("************238*****")
+                                for i in reversed(range(int(len(binascii.hexlify(timestamp)) / 2))):
+                                    tmp += binascii.hexlify(timestamp).decode('utf-8')[i * 2:(i * 2) + 2]
+                                attendance.append((uid, int(binascii.hexlify(state), 16),
+                                                   decode_time(int(tmp, 16)), unpack('HHHH', space[:8])[0]))
+                                _logger.info("************243*****")
+                                attendancedata = attendancedata[40:]
 
+                            except Exception as e:
+                                _logger.info("************248**Exception*** %s",e)
+                                pass
 
                 except Exception as e:
-                    attendance = False
+                    _logger.info("************252**Exception*** %s",e)
+                    # attendance = False
 
                 # attendance = [
                 #                 ('1', 1, datetime(2020, 1, 19, 11, 54, 15), 0), ('2', 1, datetime(2020, 1, 19, 11, 58, 32), 0), ('3', 1, datetime(2020, 1, 19, 11, 58, 48), 0), ('4', 1, datetime(2020, 1, 19, 12, 0, 8), 0), ('5', 1, datetime(2020, 1, 19, 12, 3, 1), 0), ('6', 1, datetime(2020, 1, 19, 12, 6, 18), 0), ('1', 1, datetime(2020, 1, 19, 14, 43, 13), 0), ('6', 1, datetime(2020, 1, 19, 14, 47, 5), 0), ('13', 1, datetime(2020, 1, 19, 16, 5, 54), 0), ('13', 1, datetime(2020, 1, 19, 16, 6, 3), 1), ('12', 1, datetime(2020, 1, 19, 16, 6, 36), 1), ('9', 1, datetime(2020, 1, 19, 16, 9, 59), 1), ('5', 1, datetime(2020, 1, 19, 16, 11), 1), ('10', 1, datetime(2020, 1, 19, 16, 11, 52), 1), ('7', 1, datetime(2020, 1, 19, 16, 12, 4), 1), ('10', 1, datetime(2020, 1, 19, 16, 13, 40), 1), ('14', 1, datetime(2020, 1, 19, 16, 13, 54), 1), ('1', 1, datetime(2020, 1, 19, 16, 14, 1), 1),
