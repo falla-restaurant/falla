@@ -213,7 +213,7 @@ class ZkMachine(models.Model):
                             _logger.info("***211**bytes*********** %s",bytes)
                         zk.session_id = unpack('HHHH', zk.data_recv[:8])[2]
                         _logger.info("***212***********")
-                        data_recv = zk.zkclient.recvfrom(8)
+                        # data_recv = zk.zkclient.recvfrom(8)
                         _logger.info("***214***********")
                     attendance = []
                     _logger.info("******205************* %s",zk.attendancedata)
