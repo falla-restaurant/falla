@@ -269,6 +269,8 @@ class ZkMachine(models.Model):
                 if attendance:
 
                     _logger.info("========attendance====== %s", len(attendance))
+                    _logger.info("========attendance====== %s", attendance)
+
                 else:
                     _logger.info("========attendance====== %s", attendance)
                 if attendance:
