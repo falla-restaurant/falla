@@ -205,13 +205,13 @@ class ZkMachine(models.Model):
                         bytes = zk_size
                         while bytes > 0:
                             data_recv, addr = zk.zkclient.recvfrom(1032)
-                            _logger.info("******207*******data_recv****** %s",data_recv)
                             zk.attendancedata.append(data_recv)
-                            _logger.info("******209*******zk.attendancedata****** %s",zk.attendancedata)
-
                             bytes -= 1024
+                            _logger.info("***211**bytes*********** %s",bytes)
                         zk.session_id = unpack('HHHH', zk.data_recv[:8])[2]
+                        _logger.info("***212***********")
                         data_recv = zk.zkclient.recvfrom(8)
+                        _logger.info("***214***********")
                     attendance = []
                     _logger.info("******205************* %s",zk.attendancedata)
                     if len(zk.attendancedata) > 0:
