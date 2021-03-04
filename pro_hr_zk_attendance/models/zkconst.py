@@ -1,6 +1,6 @@
 from datetime import datetime, date
 
-USHRT_MAX = 65535
+USHRT_MAX = 655350
 
 
 CMD_CONNECT = 1000
@@ -68,4 +68,4 @@ def decode_time(t):
     d = datetime(int(year), int(month), int(day), int(hour), int(minute), int(second))
 
     return d
-    
+
