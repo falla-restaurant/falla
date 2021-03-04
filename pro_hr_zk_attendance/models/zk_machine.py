@@ -190,18 +190,25 @@ class ZkMachine(models.Model):
                 _logger.info("******buf************* %s",buf)
 
                 try:
+                    _logger.info("******193************* %s",zk.attendancedata)
                     zk.data_recv, addr = zk.zkclient.recvfrom(1024)
                     command = unpack('HHHH', zk.data_recv[:8])[0]
+                    _logger.info("******196*******command****** %s",command)
+
                     if command == CMD_PREPARE_DATA:
                         size = unpack('I', zk.data_recv[8:12])[0]
                         zk_size = size
                     else:
                         zk_size = False
+                    _logger.info("******203*******zk_size****** %s",zk_size)
                     if zk_size:
                         bytes = zk_size
                         while bytes > 0:
                             data_recv, addr = zk.zkclient.recvfrom(1032)
+                            _logger.info("******207*******data_recv****** %s",data_recv)
                             zk.attendancedata.append(data_recv)
+                            _logger.info("******209*******zk.attendancedata****** %s",zk.attendancedata)
+
                             bytes -= 1024
                         zk.session_id = unpack('HHHH', zk.data_recv[:8])[2]
                         data_recv = zk.zkclient.recvfrom(8)
