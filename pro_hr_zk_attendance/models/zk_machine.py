@@ -173,7 +173,7 @@ class ZkMachine(models.Model):
                 conn = self.device_connect(zk)
             else:
                 conn = zk.connect()
-            _logger.info("******connection************ %s",conn)
+            # _logger.info("******connection************ %s",conn)
             if conn:
                 zk.enableDevice()
                 user = self.zkgetuser(zk)
@@ -185,22 +185,22 @@ class ZkMachine(models.Model):
                 buf = zk.createHeader(command, chksum, session_id,
                                       reply_id, command_string)
                 zk.zkclient.sendto(buf, zk.address)
-                _logger.info("******session_id************* %s",session_id)
-                _logger.info("******reply_id************* %s",reply_id)
-                _logger.info("******buf************* %s",buf)
+                # _logger.info("******session_id************* %s",session_id)
+                # _logger.info("******reply_id************* %s",reply_id)
+                # _logger.info("******buf************* %s",buf)
                 attendance = False
                 try:
-                    _logger.info("******193************* %s",zk.attendancedata)
+                    # _logger.info("******193************* %s",zk.attendancedata)
                     zk.data_recv, addr = zk.zkclient.recvfrom(1024)
                     command = unpack('HHHH', zk.data_recv[:8])[0]
-                    _logger.info("******196*******command****** %s",command)
+                    # _logger.info("******196*******command****** %s",command)
 
                     if command == CMD_PREPARE_DATA:
                         size = unpack('I', zk.data_recv[8:12])[0]
                         zk_size = size
                     else:
                         zk_size = False
-                    _logger.info("******203*******zk_size****** %s",zk_size)
+                    # _logger.info("******203*******zk_size****** %s",zk_size)
                     if zk_size:
                         bytes = zk_size
                         while bytes > 0:
