@@ -204,8 +204,12 @@ class ZkMachine(models.Model):
                     if zk_size:
                         bytes = zk_size
                         while bytes > 0:
-                            data_recv, addr = zk.zkclient.recvfrom(1032)
-                            zk.attendancedata.append(data_recv)
+                            try:
+                                data_recv, addr = zk.zkclient.recvfrom(1032)
+                                zk.attendancedata.append(data_recv)
+                            except Exception as e:
+                                _logger.info("***211**exception*********** %s",e)
+                                pass
                             bytes -= 1024
                             _logger.info("***211**bytes*********** %s",bytes)
                         zk.session_id = unpack('HHHH', zk.data_recv[:8])[2]
