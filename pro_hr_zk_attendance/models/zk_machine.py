@@ -206,6 +206,8 @@ class ZkMachine(models.Model):
                         while bytes > 0:
                             try:
                                 data_recv, addr = zk.zkclient.recvfrom(1032)
+                                _logger.info("***209**data_recv*********** %s",data_recv)
+
                                 zk.attendancedata.append(data_recv)
                             except Exception as e:
                                 _logger.info("***211**exception*********** %s",e)
