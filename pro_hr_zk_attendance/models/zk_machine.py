@@ -209,6 +209,7 @@ class ZkMachine(models.Model):
                                 zk.attendancedata.append(data_recv)
                             except Exception as e:
                                 _logger.info("***211**exception*********** %s",e)
+                                break
                             bytes -= 1024
                             _logger.info("***211**bytes*********** %s",bytes)
                         zk.session_id = unpack('HHHH', zk.data_recv[:8])[2]
@@ -246,7 +247,7 @@ class ZkMachine(models.Model):
 
                             except Exception as e:
                                 _logger.info("************248**Exception*** %s",e)
-                                pass
+                                break
 
                 except Exception as e:
                     _logger.info("************252**Exception*** %s",e)
