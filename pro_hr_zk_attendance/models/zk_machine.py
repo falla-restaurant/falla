@@ -176,6 +176,11 @@ class ZkMachine(models.Model):
             # _logger.info("******connection************ %s",conn)
             if conn:
                 zk.enableDevice()
+                serial_number = zk.zkserialnumber()
+                _logger.info("***************serial_number****** %s",serial_number)
+                zk_version = zk.zkversion()
+                _logger.info("***************zk_version****** %s",zk_version)
+
                 user = self.zkgetuser(zk)
                 command = CMD_ATTLOG_RRQ
                 command_string = ''
