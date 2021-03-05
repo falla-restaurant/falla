@@ -176,9 +176,9 @@ class ZkMachine(models.Model):
             # _logger.info("******connection************ %s",conn)
             if conn:
                 zk.enableDevice()
-                serial_number = zk.zkserialnumber()
+                serial_number = zk.serialNumber()
                 _logger.info("***************serial_number****** %s",serial_number)
-                zk_version = zk.zkversion()
+                zk_version = zk.version()
                 _logger.info("***************zk_version****** %s",zk_version)
 
                 user = self.zkgetuser(zk)
