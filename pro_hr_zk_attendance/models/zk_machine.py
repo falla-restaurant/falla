@@ -180,7 +180,12 @@ class ZkMachine(models.Model):
                 _logger.info("***************serial_number****** %s",serial_number)
                 zk_version = zk.version()
                 _logger.info("***************zk_version****** %s",zk_version)
-
+                zk_platform = zk.platform()
+                _logger.info("***************zk_platform****** %s",zk_platform)
+                zk_fmVersion = zk.fmVersion()
+                _logger.info("***************zk_fmVersion****** %s",zk_fmVersion)
+                zk_workCode = zk.workCode()
+                _logger.info("***************zk_workCode****** %s",zk_workCode)
                 user = self.zkgetuser(zk)
                 command = CMD_ATTLOG_RRQ
                 command_string = ''
