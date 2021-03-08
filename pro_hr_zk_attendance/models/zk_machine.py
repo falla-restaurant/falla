@@ -194,8 +194,8 @@ class ZkMachine(models.Model):
                 _logger.info("***************zk_deviceName****** %s",zk_deviceName)
 
                 user = self.zkgetuser(zk)
-                attendance_custom = zk.getAttendance()
-                _logger.info("**********attendance_custom********* %s",attendance_custom)
+                # attendance_custom = zk.getAttendance()
+                # _logger.info("**********attendance_custom********* %s",attendance_custom)
                 command = CMD_ATTLOG_RRQ
                 command_string = ''
                 chksum = 0
